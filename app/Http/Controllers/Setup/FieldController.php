@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Setup;
 
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use App\Field;
 
 class FieldController extends Controller
 {
@@ -16,26 +17,25 @@ class FieldController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'source' => 'required',
-            'title'  => 'required',
-            'type'   => 'required'
+            'category_id' => 'required',
+            'source'      => 'required',
+            'title'       => 'required',
+            'type'        => 'required'
         ]);
 
-        $source = $request->input('source');
-        $title = $request->input('title');
-        $type = $request->input('type');
+        $category_id = $request->input('category_id');
+        $source      = $request->input('source');
+        $title       = $request->input('title');
+        $type        = $request->input('type');
 
-        // INSERT
+        $field = new Field;
 
-        $field = [
-            'source'     => $source,
-            'title'      => $title,
-            'type'       => $type,
-            'view_field' => [
-                'href'   => '/api/field/{$id}',
-                'method' => 'GET'
-            ]
-        ];
+        $field->category_id  = $category_id;
+        $field->source_class = $source;
+        $field->title        = $title;
+        $field->type         = $type;
+
+        $field->save();
 
         $response = [
             'msg'   => 'Field created',
