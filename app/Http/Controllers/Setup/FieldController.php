@@ -55,24 +55,23 @@ class FieldController extends Controller
     public function update(Request $request, $id)
     {
         $request->validate([
-            'title'  => 'required'
+            'title'  => 'required',
         ]);
 
         $title = $request->input('title');
 
-        // UPDATE
+        $field = \App\Field::find($id);
 
-        $field = [
-            'id'    => $id,
-            'title' => $title
-        ];
+        $field->title = $title;
+
+        $field->save();
 
         $response = [
-            'msg'   => 'Field updated',
+            'msg'   => 'Updated Field',
             'field' => $field
         ];
 
-        return response()->json($response, 200);
+        return response()->json($response, 201);
     }
 
     /**
@@ -83,14 +82,12 @@ class FieldController extends Controller
      */
     public function destroy($id)
     {
-        // DELETE
+        $field = \App\Field::find($id);
 
-        $field = [
-            'id'    => $id
-        ];
+        $field->delete();
 
         $response = [
-            'msg'   => 'Field Deleted',
+            'msg'   => 'Deleted Field',
             'field' => $field
         ];
 

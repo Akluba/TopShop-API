@@ -20,7 +20,7 @@ class CreateFieldsTable extends Migration
             $table->string('source_class');
             $table->string('title');
             $table->string('type');
-            $table->string('column_name')->default('LOG_FIELD1');
+            $table->string('column_name')->nullable();
             $table->softDeletes();
         });
     }
