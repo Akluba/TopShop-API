@@ -20,4 +20,11 @@ class Column extends Model
     {
     	return $this->hasMany('App\Option', 'source_id');
     }
+
+    public static function nextLogColumnName($field_id)
+    {
+        $latest = self::withTrashed()->where('field_id', $field_id)->max('column_name');
+
+        return ++$latest;
+    }
 }

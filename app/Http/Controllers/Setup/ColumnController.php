@@ -26,12 +26,14 @@ class ColumnController extends Controller
         $field_id = $request->input('field_id');
         $type     = $request->input('type');
         $title    = $request->input('title');
+        $column_name  = \App\Column::nextLogColumnName($field_id);
 
         $column = New Column;
 
-        $column->field_id = $field_id;
-        $column->type     = $type;
-        $column->title    = $title;
+        $column->field_id    = $field_id;
+        $column->column_name = $column_name;
+        $column->type        = $type;
+        $column->title       = $title;
 
         $column->save();
 
