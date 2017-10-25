@@ -5,24 +5,19 @@ namespace App;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Field extends Model
+class Column extends Model
 {
-	use SoftDeletes;
+    use SoftDeletes;
 
     protected $dates = ['deleted_at'];
 
-    public function category()
+    public function field()
     {
-    	return $this->belongsTo('App\Category');
+    	return $this->belongsTo('App\Field');
     }
 
     public function options()
     {
     	return $this->hasMany('App\Option', 'source_id');
-    }
-
-    public function columns()
-    {
-        return $this->hasMany('App\Column', 'field_id');
     }
 }

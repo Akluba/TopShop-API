@@ -15,6 +15,7 @@ use Illuminate\Http\Request;
 
 Route::apiResource('category', 'Setup\CategoryController');
 Route::resource('field', 'Setup\FieldController', ['only' => ['store','show','update','destroy']]);
+Route::resource('column', 'Setup\ColumnController', ['only' => ['store','show','update','destroy']]);
 Route::resource('option', 'Setup\OptionController', ['only' => ['store','update','destroy']]);
 
 Route::middleware('auth:api')->get('/user', function (Request $request) {

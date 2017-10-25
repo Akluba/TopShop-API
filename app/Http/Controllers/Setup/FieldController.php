@@ -79,15 +79,38 @@ class FieldController extends Controller
         ];
 
         if ($field->type == 'log') {
-
-        }
-        else {
             $actions['store'] = [
-                'href'   => '/api/option?source_class=Shop&source_id='.$field->id,
+                'href'   => '/api/column?field_id='.$field->id,
                 'method' => 'POST'
             ];
 
-            $options = \App\Field::find($id)->options;
+            $columns = \App\Field::find($id)->columns;
+
+            foreach($columns as $i => $column) {
+                $column_actions = [
+                    'href' => '/api/column/'.$column->id,
+                    'method' => [
+                        'update'  => 'PUT',
+                        'destroy' => 'DELETE'
+                    ]
+                ];
+
+                if (in_array($column->type, array('select','select_multiple'))) {
+                    $column_actions['method']['show'] = 'GET';
+                }
+
+                $columns[$i]['actions'] = $column_actions;
+            }
+
+            $field->columns = $columns;
+        }
+        else {
+            $actions['store'] = [
+                'href'   => '/api/option?source_class=CustomField&source_id='.$field->id,
+                'method' => 'POST'
+            ];
+
+            $options = \App\Field::find($id)->options()->where('source_class', 'CustomField')->get();
 
             foreach($options as $i => $option) {
                 $options[$i]['actions'] = [
