@@ -15,4 +15,9 @@ class Field extends Model
     {
     	return $this->belongsTo('App\Category');
     }
+
+    public function options()
+    {
+    	return $this->hasMany('App\Option', 'source_id');
+    }
 }

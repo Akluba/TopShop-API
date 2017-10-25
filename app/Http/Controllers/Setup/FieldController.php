@@ -17,29 +17,95 @@ class FieldController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'category_id' => 'required',
-            'source'      => 'required',
-            'title'       => 'required',
-            'type'        => 'required'
+            'source_class' => 'required',
+            'category_id'  => 'required',
+            'title'        => 'required',
+            'type'         => 'required'
         ]);
 
-        $category_id = $request->input('category_id');
-        $source      = $request->input('source');
-        $title       = $request->input('title');
-        $type        = $request->input('type');
+        $source_class = $request->input('source_class');
+        $category_id  = $request->input('category_id');
+        $title        = $request->input('title');
+        $type         = $request->input('type');
 
         $field = new Field;
 
+        $field->source_class = $source_class;
         $field->category_id  = $category_id;
-        $field->source_class = $source;
         $field->title        = $title;
         $field->type         = $type;
 
         $field->save();
 
+        $field_actions = [
+            'href'   => '/api/field/'.$field->id,
+            'method' => [
+                'update'  => 'PUT',
+                'destroy' => 'DELETE'
+            ]
+        ];
+
+        if (in_array($field->type, array('log','select','select_multiple'))) {
+            $field_actions['method']['show'] = 'GET';
+        }
+
+        $field->actions = $field_actions;
+
         $response = [
             'msg'   => 'Field created',
             'field' => $field
+        ];
+
+        return response()->json($response, 201);
+    }
+
+    /**
+     * Display the specified resource.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function show($id)
+    {
+        $field = \App\Field::find($id);
+
+        $category_id = $field->category->id;
+
+        $actions = [
+            'back' => [
+                'href'   => '/api/category/'.$category_id,
+                'method' => 'GET'
+            ]
+        ];
+
+        if ($field->type == 'log') {
+
+        }
+        else {
+            $actions['store'] = [
+                'href'   => '/api/option?source_class=Shop&source_id='.$field->id,
+                'method' => 'POST'
+            ];
+
+            $options = \App\Field::find($id)->options;
+
+            foreach($options as $i => $option) {
+                $options[$i]['actions'] = [
+                    'href'   => '/api/option/'.$option->id,
+                    'method' => [
+                        'update'  => 'PUT',
+                        'destroy' => 'DELETE'
+                    ]
+                ];
+            }
+
+            $field->options = $options;
+        }
+
+        $response = [
+            'msg'     => 'Display specific Field',
+            'actions' => $actions,
+            'field'   => $field
         ];
 
         return response()->json($response, 201);
@@ -63,7 +129,6 @@ class FieldController extends Controller
         $field = \App\Field::find($id);
 
         $field->title = $title;
-
         $field->save();
 
         $response = [

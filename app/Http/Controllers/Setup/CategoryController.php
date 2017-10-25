@@ -16,24 +16,34 @@ class CategoryController extends Controller
     public function index(Request $request)
     {
         $request->validate([
-            'source' => 'required'
+            'source_class' => 'required'
         ]);
 
-        $source = $request->input('source');
+        $source_class = $request->input('source_class');
 
-        $categories = \App\Category::where('source_class', $source)->get();
+        $actions = [
+            'store' => [
+                'href'   => '/api/category?source_class='.$source_class,
+                'method' => 'POST'
+            ]
+        ];
+
+        $categories = \App\Category::where('source_class', $source_class)->get();
 
         foreach ($categories as $i => $category) {
-            $view_category = [
+            $categories[$i]['actions'] = [
                 'href'   => '/api/category/'.$category->id,
-                'method' => 'GET'
+                'method' => [
+                    'show'    => 'GET',
+                    'update'  => 'PUT',
+                    'destroy' => 'DELETE'
+                ]
             ];
-
-            $categories[$i]['view_category'] = $view_category;
         }
 
         $response = [
             'msg'        => 'List of all Shop Categories',
+            'actions'    => $actions,
             'categories' => $categories
         ];
 
@@ -49,23 +59,27 @@ class CategoryController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'source' => 'required',
-            'title'  => 'required'
+            'source_class' => 'required',
+            'title'        => 'required'
         ]);
 
-        $source = $request->input('source');
-        $title = $request->input('title');
+        $source_class = $request->input('source_class');
+        $title        = $request->input('title');
 
         $category = new Category;
 
-        $category->source_class = $source;
+        $category->source_class = $source_class;
         $category->title        = $title;
 
         $category->save();
 
-        $category->view_category = [
+        $category->actions = [
             'href'   => '/api/category/'.$category->id,
-            'method' => 'GET'
+            'method' => [
+                'show'    => 'GET',
+                'update'  => 'PUT',
+                'destroy' => 'DELETE'
+            ]
         ];
 
         $response = [
@@ -86,15 +100,40 @@ class CategoryController extends Controller
     {
         $category = \App\Category::find($id);
 
-        $category->all_categories = [
-            'href' => '/api/category',
-            'method' => 'GET'
+        $actions = [
+            'back'  => [
+                'href' => '/api/category?source_class='.$category->source_class,
+                'method' => 'GET'
+            ],
+            'store' => [
+                'href' => '/api/field?source_class='.$category->source_class.'&category_id='.$category->id,
+                'method' => 'POST'
+            ]
         ];
 
-        $category->fields = \App\Category::find($id)->fields;
+        $fields = \App\Category::find($id)->fields;
+
+        foreach($fields as $i => $field) {
+            $field_actions = [
+                'href' => '/api/field/'.$field->id,
+                'method' => [
+                    'update'  => 'PUT',
+                    'destroy' => 'DELETE'
+                ]
+            ];
+
+            if (in_array($field->type, array('log','select','select_multiple'))) {
+                $field_actions['method']['show'] = 'GET';
+            }
+
+            $fields[$i]['actions'] = $field_actions;
+        }
+
+        $category->fields = $fields;
 
         $response = [
             'msg'      => 'Display specific Category',
+            'actions'  => $actions,
             'category' => $category
         ];
 
@@ -119,13 +158,7 @@ class CategoryController extends Controller
         $category = \App\Category::find($id);
 
         $category->title = $title;
-
         $category->save();
-
-        $category->view_category = [
-            'href'   => '/api/category/'.$category->id,
-            'method' => 'GET'
-        ];
 
         $response = [
             'msg'      => 'Updated Category',
