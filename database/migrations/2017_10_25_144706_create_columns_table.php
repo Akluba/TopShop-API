@@ -17,7 +17,7 @@ class CreateColumnsTable extends Migration
             $table->increments('id');
             $table->timestamps();
             $table->integer('field_id');
-            $table->string('column_name')->nullable();
+            $table->string('column_name');
             $table->string('type');
             $table->string('title');
             $table->softDeletes();

@@ -21,10 +21,12 @@ class Column extends Model
     	return $this->hasMany('App\Option', 'source_id');
     }
 
-    public static function nextLogColumnName($field_id)
+    public static function incrementColumnName($field_id)
     {
-        $latest = self::withTrashed()->where('field_id', $field_id)->max('column_name');
+        $last = self::where('field_id', $field_id)->max('column_name');
 
-        return ++$latest;
+        $column_name = (($last === "") ? 'LOG_FIELD1' : ++$last);
+
+        return $column_name;
     }
 }

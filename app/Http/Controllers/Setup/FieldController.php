@@ -27,6 +27,7 @@ class FieldController extends Controller
         $category_id  = $request->input('category_id');
         $title        = $request->input('title');
         $type         = $request->input('type');
+        $column_name  = \App\Field::incrementColumnName();
 
         $field = new Field;
 
@@ -34,8 +35,9 @@ class FieldController extends Controller
         $field->category_id  = $category_id;
         $field->title        = $title;
         $field->type         = $type;
+        $field->column_name  = $column_name;
 
-        $field->save();
+        //$field->save();
 
         $field_actions = [
             'href'   => '/api/field/'.$field->id,

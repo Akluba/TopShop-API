@@ -26,7 +26,7 @@ class ColumnController extends Controller
         $field_id = $request->input('field_id');
         $type     = $request->input('type');
         $title    = $request->input('title');
-        $column_name  = \App\Column::nextLogColumnName($field_id);
+        $column_name  = \App\Column::incrementColumnName($field_id);
 
         $column = New Column;
 

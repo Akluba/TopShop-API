@@ -25,4 +25,13 @@ class Field extends Model
     {
         return $this->hasMany('App\Column', 'field_id');
     }
+
+    public static function incrementColumnName()
+    {
+        $last = self::withTrashed()->max('column_name');
+
+        $column_name = (($last === "") ? 'custom_1' : ++$last);
+
+        return $column_name;
+    }
 }
