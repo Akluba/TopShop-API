@@ -10,6 +10,7 @@ class Category extends Model
     use SoftDeletes;
 
     protected $dates = ['deleted_at'];
+    protected $hidden = ['created_at','updated_at','deleted_at','id','source_class'];
 
     public function fields()
     {

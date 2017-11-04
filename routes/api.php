@@ -18,6 +18,6 @@ Route::resource('field', 'Setup\FieldController', ['only' => ['store','show','up
 Route::resource('column', 'Setup\ColumnController', ['only' => ['store','show','update','destroy']]);
 Route::resource('option', 'Setup\OptionController', ['only' => ['store','update','destroy']]);
 
-Route::middleware('auth:api')->get('/user', function (Request $request) {
-    return $request->user();
+Route::middleware('auth:api')->get('/users', function (Request $request) {
+    return response()->json(\App\User::all());
 });
