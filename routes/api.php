@@ -13,11 +13,15 @@ use Illuminate\Http\Request;
 |
 */
 
-Route::apiResource('category', 'Setup\CategoryController');
-Route::resource('field', 'Setup\FieldController', ['only' => ['store','show','update','destroy']]);
-Route::resource('column', 'Setup\ColumnController', ['only' => ['store','show','update','destroy']]);
-Route::resource('option', 'Setup\OptionController', ['only' => ['store','update','destroy']]);
+Route::post('/login', 'Auth\AuthController@login');
+Route::post('/login/refresh', 'Auth\AuthController@refresh');
 
-Route::middleware('auth:api')->get('/users', function (Request $request) {
-    return response()->json(\App\User::all());
+Route::middleware(['auth:api'])->group(function() {
+	Route::get('/user', function (Request $request) {
+		return $request->user();
+	});
+	Route::apiResource('category', 'Setup\CategoryController');
+	Route::resource('field', 'Setup\FieldController', ['only' => ['store','show','update','destroy']]);
+	Route::resource('column', 'Setup\ColumnController', ['only' => ['store','show','update','destroy']]);
+	Route::resource('option', 'Setup\OptionController', ['only' => ['store','update','destroy']]);
 });
