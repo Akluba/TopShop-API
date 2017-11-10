@@ -22,8 +22,7 @@ class AuthController extends Controller
 		$password = $request->get('password');
 
 		$response = $this->authProxy->attemptLogin($email, $password);
-		//return $response;
-		return response()->json($response, 200);
+		return response()->json($response, 201);
 	}
 
 	public function refresh(Request $request)
@@ -34,7 +33,9 @@ class AuthController extends Controller
 	public function logout()
 	{
 		$this->authProxy->logout();
-		return $this->response(null, 204);
+
+		$response = ['message' => 'User has been logged out'];
+		return response()->json($response, 200);
 	}
 
 }

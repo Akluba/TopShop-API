@@ -90,7 +90,7 @@ class AuthProxy
 			->table('oauth_refresh_tokens')
 			->where('access_token_id', $accessToken->id)
 			->update([
-				'revoke' => true
+				'revoked' => true
 			]);
 
 		$accessToken->revoke();
