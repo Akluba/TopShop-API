@@ -17,13 +17,16 @@ Route::post('/auth/login', 'Auth\AuthController@login');
 Route::post('/auth/refresh', 'Auth\AuthController@refresh');
 
 Route::middleware(['auth:api'])->group(function() {
-	Route::get('/auth/user', function (Request $request) {
-		return $request->user();
-	});
 
+	/**
+	 * Auth Routes.
+	 */
+	Route::get('/auth/currentUser', 'Auth\AuthController@currentUser');
 	Route::post('/auth/logout', 'Auth\AuthController@logout');
-	//Route::post('/auth/user', 'Auth\AuthController@user');
 
+	/**
+	 * Field set up Routes.
+	 */
 	Route::apiResource('category', 'Setup\CategoryController');
 	Route::resource('field', 'Setup\FieldController', ['only' => ['store','show','update','destroy']]);
 	Route::resource('column', 'Setup\ColumnController', ['only' => ['store','show','update','destroy']]);

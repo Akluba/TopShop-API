@@ -21,13 +21,41 @@ class AuthController extends Controller
 		$email = $request->get('email');
 		$password = $request->get('password');
 
-		$response = $this->authProxy->attemptLogin($email, $password);
-		return response()->json($response, 201);
+		$proxyResponse = $this->authProxy->attemptLogin($email, $password);
+
+		$response = [
+			'access_token' => $proxyResponse['access_token'],
+			'expires_in'   => $proxyResponse['expires_in']
+		];
+
+		return response()->json($response, 201)->cookie('refresh_token',$proxyResponse['refresh_token'],14400,null,null,false,true);
+	}
+
+	public function currentUser(Request $request)
+	{
+		$user = $request->user();
+
+		$current_user = [
+			'id' => $user['id'],
+			'name' => $user['name'],
+			'email' => $user['email'],
+			'role' => $user['profile']
+		];
+
+		$response = [
+			'message'     => 'Current User Information',
+			'currentUser' => $current_user
+		];
+
+		return response()->json($current_user, 200);
 	}
 
 	public function refresh(Request $request)
 	{
-		return $this->response($this->authProxy->attemptRefresh());
+		$refreshToken = $request->cookie('refresh_token');
+		$response = $this->authProxy->attemptRefresh($refreshToken);
+
+		return response()->json($response, 200);
 	}
 
 	public function logout()

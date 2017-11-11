@@ -6,6 +6,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Hash;
 use App\Exceptions\InvalidCredentialsException;
 use App\User;
+use Cookie;
 
 class AuthProxy
 {
@@ -28,6 +29,7 @@ class AuthProxy
 	public function attemptLogin($email, $password)
 	{
 		$user = \App\User::where('email', $email)
+			->where('active', 1)
 			->get()
 			->first();
 
@@ -41,10 +43,8 @@ class AuthProxy
 		throw new InvalidCredentialsException('Invalid login credentials');
 	}
 
-	public function attemptRefresh()
+	public function attemptRefresh($refreshToken)
 	{
-		$refreshToken = $this->request->cookie(self::REFRESH_TOKEN);
-
 		return $this->proxy('refresh_token', [
 			'refresh_token' => $refreshToken
 		]);
@@ -66,19 +66,10 @@ class AuthProxy
 
 		$data = json_decode($response->getContent());
 
-		$this->cookie->queue(
-			self::REFRESH_TOKEN,
-			$data->refresh_token,
-			86400,
-			null,
-			null,
-			false,
-			true
-		);
-
 		return [
-			'access_token' => $data->access_token,
-			'expires_in'   => $data->expires_in
+			'access_token'  => $data->access_token,
+			'refresh_token' => $data->refresh_token,
+			'expires_in'    => $data->expires_in
 		];
 	}
 
