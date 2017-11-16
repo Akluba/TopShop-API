@@ -78,42 +78,11 @@ class CategoryController extends Controller
     public function show($id)
     {
         $category = \App\Category::find($id);
-
-        $actions = [
-            'back'  => [
-                'href' => '/api/category?source_class='.$category->source_class,
-                'method' => 'GET'
-            ],
-            'store' => [
-                'href' => '/api/field?source_class='.$category->source_class.'&category_id='.$category->id,
-                'method' => 'POST'
-            ]
-        ];
-
-        $fields = \App\Category::find($id)->fields;
-
-        foreach($fields as $i => $field) {
-            $field_actions = [
-                'href' => '/api/field/'.$field->id,
-                'method' => [
-                    'update'  => 'PUT',
-                    'destroy' => 'DELETE'
-                ]
-            ];
-
-            if (in_array($field->type, array('log','select','select_multiple'))) {
-                $field_actions['method']['show'] = 'GET';
-            }
-
-            $fields[$i]['actions'] = $field_actions;
-        }
-
-        $category->fields = $fields;
+        $category->fields = \App\Category::find($id)->fields;
 
         $response = [
-            'msg'      => 'Display specific Category',
-            'actions'  => $actions,
-            'category' => $category
+            'message' => "Displaying fields for Category: {$category->title}",
+            'data'    => $category
         ];
 
         return response()->json($response, 200);

@@ -37,25 +37,25 @@ class FieldController extends Controller
         $field->type         = $type;
         $field->column_name  = $column_name;
 
-        //$field->save();
+        $field->save();
 
-        $field_actions = [
-            'href'   => '/api/field/'.$field->id,
-            'method' => [
-                'update'  => 'PUT',
-                'destroy' => 'DELETE'
-            ]
-        ];
+        // $field_actions = [
+        //     'href'   => '/api/field/'.$field->id,
+        //     'method' => [
+        //         'update'  => 'PUT',
+        //         'destroy' => 'DELETE'
+        //     ]
+        // ];
 
-        if (in_array($field->type, array('log','select','select_multiple'))) {
-            $field_actions['method']['show'] = 'GET';
-        }
+        // if (in_array($field->type, array('log','select','select_multiple'))) {
+        //     $field_actions['method']['show'] = 'GET';
+        // }
 
-        $field->actions = $field_actions;
+        // $field->actions = $field_actions;
 
         $response = [
-            'msg'   => 'Field created',
-            'field' => $field
+            'message' => "Field: {$field->title}, has been created.",
+            'data'    => $field
         ];
 
         return response()->json($response, 201);
@@ -157,8 +157,8 @@ class FieldController extends Controller
         $field->save();
 
         $response = [
-            'msg'   => 'Updated Field',
-            'field' => $field
+            'message' => "Field: {$field->title}, has been updated.",
+            'data'    => $field
         ];
 
         return response()->json($response, 201);
@@ -177,10 +177,10 @@ class FieldController extends Controller
         $field->delete();
 
         $response = [
-            'msg'   => 'Deleted Field',
-            'field' => $field
+            'message' => "Field: {$field->title}, has been deleted.",
+            'data'    => $field
         ];
 
-        return response()->json($response, 201);
+        return response()->json($response, 200);
     }
 }
