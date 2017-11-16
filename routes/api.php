@@ -16,7 +16,7 @@ use Illuminate\Http\Request;
 Route::post('/auth/login', 'Auth\AuthController@login');
 Route::post('/auth/refresh', 'Auth\AuthController@refresh');
 
-Route::middleware(['auth:api'])->group(function() {
+//Route::middleware(['auth:api'])->group(function() {
 
 	/**
 	 * Auth Routes.
@@ -31,4 +31,4 @@ Route::middleware(['auth:api'])->group(function() {
 	Route::resource('field', 'Setup\FieldController', ['only' => ['store','show','update','destroy']]);
 	Route::resource('column', 'Setup\ColumnController', ['only' => ['store','show','update','destroy']]);
 	Route::resource('option', 'Setup\OptionController', ['only' => ['store','update','destroy']]);
-});
+//});

@@ -30,21 +30,9 @@ class CategoryController extends Controller
 
         $categories = \App\Category::where('source_class', $source_class)->get();
 
-        foreach ($categories as $i => $category) {
-            $categories[$i]['actions'] = [
-                'href'   => '/api/category/'.$category->id,
-                'method' => [
-                    'show'    => 'GET',
-                    'update'  => 'PUT',
-                    'destroy' => 'DELETE'
-                ]
-            ];
-        }
-
         $response = [
-            'msg'        => 'List of all Shop Categories',
-            'actions'    => $actions,
-            'categories' => $categories
+            'message' => 'List of all Shop Categories',
+            'data'    => $categories
         ];
 
         return response()->json($response, 200);
@@ -73,18 +61,9 @@ class CategoryController extends Controller
 
         $category->save();
 
-        $category->actions = [
-            'href'   => '/api/category/'.$category->id,
-            'method' => [
-                'show'    => 'GET',
-                'update'  => 'PUT',
-                'destroy' => 'DELETE'
-            ]
-        ];
-
         $response = [
-            'msg'      => 'Category created',
-            'category' => $category
+            'message' => "Category: {$category->title}, has been created.",
+            'data'    => $category
         ];
 
         return response()->json($response, 201);
@@ -161,8 +140,8 @@ class CategoryController extends Controller
         $category->save();
 
         $response = [
-            'msg'      => 'Updated Category',
-            'category' => $category
+            'message' => "Category: {$category->title}, has been updated.",
+            'data'    => $category
         ];
 
         return response()->json($response, 201);
@@ -181,10 +160,10 @@ class CategoryController extends Controller
         $category->delete();
 
         $response = [
-            'msg'      => 'Deleted Category',
-            'category' => $category
+            'message' => "Category: {$category->title}, has been deleted.",
+            'data'    => $category
         ];
 
-        return response()->json($response, 201);
+        return response()->json($response, 200);
     }
 }
