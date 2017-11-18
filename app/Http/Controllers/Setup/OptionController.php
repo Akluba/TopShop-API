@@ -35,17 +35,9 @@ class OptionController extends Controller
 
         $option->save();
 
-        $option->actions = [
-            'href'   => '/api/option/'.$option->id,
-            'method' => [
-                'update'  => 'PUT',
-                'destroy' => 'DELETE'
-            ]
-        ];
-
         $response = [
-            'msg'    => 'Option created',
-            'option' => $option
+            'message' => "Option: {$option->label}, has been created.",
+            'data'    => $option
         ];
 
         return response()->json($response, 201);
@@ -72,8 +64,8 @@ class OptionController extends Controller
         $option->save();
 
         $response = [
-            'msg'    => 'Updated Option',
-            'option' => $option
+            'message' => "Option: {$option->label}, has been updated.",
+            'data'    => $option
         ];
 
         return response()->json($response, 201);
@@ -92,10 +84,10 @@ class OptionController extends Controller
         $option->delete();
 
         $response = [
-            'msg'    => 'Deleted Option',
-            'option' => $option
+            'message' => "Option: {$option->label}, has been deleted.",
+            'data'    => $option
         ];
 
-        return response()->json($response, 201);
+        return response()->json($response, 200);
     }
 }

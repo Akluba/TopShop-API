@@ -70,67 +70,20 @@ class FieldController extends Controller
     public function show($id)
     {
         $field = \App\Field::find($id);
-
         $category_id = $field->category->id;
 
-        $actions = [
-            'back' => [
-                'href'   => '/api/category/'.$category_id,
-                'method' => 'GET'
-            ]
-        ];
-
         if ($field->type == 'log') {
-            $actions['store'] = [
-                'href'   => '/api/column?field_id='.$field->id,
-                'method' => 'POST'
-            ];
-
             $columns = \App\Field::find($id)->columns;
-
-            foreach($columns as $i => $column) {
-                $column_actions = [
-                    'href' => '/api/column/'.$column->id,
-                    'method' => [
-                        'update'  => 'PUT',
-                        'destroy' => 'DELETE'
-                    ]
-                ];
-
-                if (in_array($column->type, array('select','select_multiple'))) {
-                    $column_actions['method']['show'] = 'GET';
-                }
-
-                $columns[$i]['actions'] = $column_actions;
-            }
-
             $field->columns = $columns;
         }
         else {
-            $actions['store'] = [
-                'href'   => '/api/option?source_class=CustomField&source_id='.$field->id,
-                'method' => 'POST'
-            ];
-
             $options = \App\Field::find($id)->options()->where('source_class', 'CustomField')->get();
-
-            foreach($options as $i => $option) {
-                $options[$i]['actions'] = [
-                    'href'   => '/api/option/'.$option->id,
-                    'method' => [
-                        'update'  => 'PUT',
-                        'destroy' => 'DELETE'
-                    ]
-                ];
-            }
-
             $field->options = $options;
         }
 
         $response = [
-            'msg'     => 'Display specific Field',
-            'actions' => $actions,
-            'field'   => $field
+            'message' => "Displaying options/columns for Field: {$field->title}",
+            'data'    => $field
         ];
 
         return response()->json($response, 201);

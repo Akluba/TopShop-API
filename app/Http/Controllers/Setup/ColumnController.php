@@ -37,31 +37,9 @@ class ColumnController extends Controller
 
         $column->save();
 
-        $column->actions = [
-            'href'   => '/api/column/'.$column->id,
-            'method' => [
-                'update'  => 'PUT',
-                'destroy' => 'DELETE'
-            ]
-        ];
-
-        $column_actions = [
-            'href'   => '/api/column/'.$column->id,
-            'method' => [
-                'update'  => 'PUT',
-                'destroy' => 'DELETE'
-            ]
-        ];
-
-        if (in_array($column->type, array('select','select_multiple'))) {
-            $column_actions['method']['show'] = 'GET';
-        }
-
-        $column->actions = $column_actions;
-
         $response = [
-            'msg'    => 'Column created',
-            'column' => $column
+            'message' => "Column: {$column->title}, has been created.",
+            'data'    => $column
         ];
 
         return response()->json($response, 201);
@@ -78,36 +56,36 @@ class ColumnController extends Controller
         $column = \App\Column::find($id);
 
         $field_id = $column->field->id;
+        $category_id = $column->field->category;
 
-        $actions = [
-            'back'  => [
-                'href'   => '/api/field/'.$field_id,
-                'method' => 'GET'
-            ],
-            'store' => [
-                'href'   => '/api/option?source_class=CustomFieldLogColumn&source_id='.$column->id,
-                'method' => 'POST'
-            ]
-        ];
+        // $actions = [
+        //     'back'  => [
+        //         'href'   => '/api/field/'.$field_id,
+        //         'method' => 'GET'
+        //     ],
+        //     'store' => [
+        //         'href'   => '/api/option?source_class=CustomFieldLogColumn&source_id='.$column->id,
+        //         'method' => 'POST'
+        //     ]
+        // ];
 
         $options = \App\Column::find($id)->options()->where('source_class', 'CustomFieldLogColumn')->get();
 
-        foreach($options as $i => $option) {
-            $options[$i]['actions'] = [
-                'href'   => '/api/option/'.$option->id,
-                'method' => [
-                    'update'  => 'PUT',
-                    'destroy' => 'DELETE'
-                ]
-            ];
-        }
+        // foreach($options as $i => $option) {
+        //     $options[$i]['actions'] = [
+        //         'href'   => '/api/option/'.$option->id,
+        //         'method' => [
+        //             'update'  => 'PUT',
+        //             'destroy' => 'DELETE'
+        //         ]
+        //     ];
+        // }
 
         $column->options = $options;
 
         $response = [
-            'msg'     => 'Display specific Column',
-            'actions' => $actions,
-            'column'   => $column
+            'message' => 'Display specific Column',
+            'data'    => $column
         ];
 
         return response()->json($response, 201);
@@ -134,8 +112,8 @@ class ColumnController extends Controller
         $column->save();
 
         $response = [
-            'msg'    => 'Updated Column',
-            'column' => $column
+            'message' => "Column: {$column->title}, has been updated.",
+            'data'    => $column
         ];
 
         return response()->json($response, 201);
@@ -154,10 +132,10 @@ class ColumnController extends Controller
         $column->delete();
 
         $response = [
-            'msg'    => 'Deleted Column',
-            'column' => $column
+            'message' => "Column: {$column->title}, has been deleted.",
+            'data'    => $column
         ];
 
-        return response()->json($response, 201);
+        return response()->json($response, 200);
     }
 }

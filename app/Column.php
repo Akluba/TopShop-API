@@ -10,6 +10,7 @@ class Column extends Model
     use SoftDeletes;
 
     protected $dates = ['deleted_at'];
+    protected $hidden = ['created_at','updated_at','deleted_at'];
 
     public function field()
     {
@@ -25,7 +26,7 @@ class Column extends Model
     {
         $last = self::where('field_id', $field_id)->max('column_name');
 
-        $column_name = (($last === "") ? 'LOG_FIELD1' : ++$last);
+        $column_name = ((is_null($last)) ? 'LOG_FIELD1' : ++$last);
 
         return $column_name;
     }

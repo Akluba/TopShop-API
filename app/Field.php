@@ -31,7 +31,7 @@ class Field extends Model
     {
         $last = self::withTrashed()->max('column_name');
 
-        $column_name = (($last === "") ? 'custom_1' : ++$last);
+        $column_name = ((is_null($last)) ? 'custom_1' : ++$last);
 
         return $column_name;
     }
