@@ -18,7 +18,7 @@ class CreateOptionsTable extends Migration
             $table->timestamps();
             $table->string('source_class');
             $table->integer('source_id');
-            $table->string('label');
+            $table->string('title');
             $table->softDeletes();
         });
     }

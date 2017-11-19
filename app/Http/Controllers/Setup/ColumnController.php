@@ -54,37 +54,15 @@ class ColumnController extends Controller
     public function show($id)
     {
         $column = \App\Column::find($id);
-
-        $field_id = $column->field->id;
-        $category_id = $column->field->category;
-
-        // $actions = [
-        //     'back'  => [
-        //         'href'   => '/api/field/'.$field_id,
-        //         'method' => 'GET'
-        //     ],
-        //     'store' => [
-        //         'href'   => '/api/option?source_class=CustomFieldLogColumn&source_id='.$column->id,
-        //         'method' => 'POST'
-        //     ]
-        // ];
+        $field = $column->field;
+        $category = $column->field->category;
 
         $options = \App\Column::find($id)->options()->where('source_class', 'CustomFieldLogColumn')->get();
-
-        // foreach($options as $i => $option) {
-        //     $options[$i]['actions'] = [
-        //         'href'   => '/api/option/'.$option->id,
-        //         'method' => [
-        //             'update'  => 'PUT',
-        //             'destroy' => 'DELETE'
-        //         ]
-        //     ];
-        // }
 
         $column->options = $options;
 
         $response = [
-            'message' => 'Display specific Column',
+            'message' => "Displaying options for Column: {$column->title}",
             'data'    => $column
         ];
 

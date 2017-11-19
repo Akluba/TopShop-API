@@ -20,23 +20,23 @@ class OptionController extends Controller
         $request->validate([
             'source_class' => 'required',
             'source_id'    => 'required',
-            'label'        => 'required'
+            'title'        => 'required'
         ]);
 
         $source_class = $request->input('source_class');
         $source_id    = $request->input('source_id');
-        $label        = $request->input('label');
+        $title        = $request->input('title');
 
         $option = New Option;
 
         $option->source_class = $source_class;
         $option->source_id    = $source_id;
-        $option->label        = $label;
+        $option->title        = $title;
 
         $option->save();
 
         $response = [
-            'message' => "Option: {$option->label}, has been created.",
+            'message' => "Option: {$option->title}, has been created.",
             'data'    => $option
         ];
 
@@ -53,18 +53,18 @@ class OptionController extends Controller
     public function update(Request $request, $id)
     {
         $request->validate([
-            'label'  => 'required',
+            'title'  => 'required',
         ]);
 
-        $label = $request->input('label');
+        $title = $request->input('title');
 
         $option = \App\Option::find($id);
 
-        $option->label = $label;
+        $option->title = $title;
         $option->save();
 
         $response = [
-            'message' => "Option: {$option->label}, has been updated.",
+            'message' => "Option: {$option->title}, has been updated.",
             'data'    => $option
         ];
 
@@ -84,7 +84,7 @@ class OptionController extends Controller
         $option->delete();
 
         $response = [
-            'message' => "Option: {$option->label}, has been deleted.",
+            'message' => "Option: {$option->title}, has been deleted.",
             'data'    => $option
         ];
 
