@@ -61,9 +61,16 @@ class ColumnController extends Controller
 
         $column->options = $options;
 
+        $data = [
+            'ancestor' => $category,
+            'parent'   => $field,
+            'primary'  => $column,
+            'children' => $options
+        ];
+
         $response = [
             'message' => "Displaying options for Column: {$column->title}",
-            'data'    => $column
+            'data'    => $data
         ];
 
         return response()->json($response, 201);

@@ -70,20 +70,25 @@ class FieldController extends Controller
     public function show($id)
     {
         $field = \App\Field::find($id);
-        $category_id = $field->category->id;
+        $category = $field->category;
 
         if ($field->type == 'log') {
-            $columns = \App\Field::find($id)->columns;
-            $field->columns = $columns;
+            $children = \App\Field::find($id)->columns;
         }
         else {
-            $options = \App\Field::find($id)->options()->where('source_class', 'CustomField')->get();
-            $field->options = $options;
+            $children = \App\Field::find($id)->options()->where('source_class', 'CustomField')->get();
         }
+
+        $data = [
+            'ancestor' => null,
+            'parent'   => $category,
+            'primary'  => $field,
+            'children' => $children
+        ];
 
         $response = [
             'message' => "Displaying options/columns for Field: {$field->title}",
-            'data'    => $field
+            'data'    => $data
         ];
 
         return response()->json($response, 201);

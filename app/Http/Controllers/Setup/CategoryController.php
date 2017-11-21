@@ -21,18 +21,18 @@ class CategoryController extends Controller
 
         $source_class = $request->input('source_class');
 
-        $actions = [
-            'store' => [
-                'href'   => '/api/category?source_class='.$source_class,
-                'method' => 'POST'
-            ]
-        ];
-
         $categories = \App\Category::where('source_class', $source_class)->get();
+
+        $data = [
+            'ancestor' => null,
+            'parent'   => null,
+            'primary'  => null,
+            'children' => $categories
+        ];
 
         $response = [
             'message' => 'List of all Shop Categories',
-            'data'    => $categories
+            'data'    => $data
         ];
 
         return response()->json($response, 200);
@@ -78,11 +78,18 @@ class CategoryController extends Controller
     public function show($id)
     {
         $category = \App\Category::find($id);
-        $category->fields = \App\Category::find($id)->fields;
+        $fields = \App\Category::find($id)->fields;
+
+        $data = [
+            'ancestor' => null,
+            'parent'   => null,
+            'primary'  => $category,
+            'children' => $fields
+        ];
 
         $response = [
             'message' => "Displaying fields for Category: {$category->title}",
-            'data'    => $category
+            'data'    => $data
         ];
 
         return response()->json($response, 200);
