@@ -31,4 +31,6 @@ Route::post('/auth/refresh', 'Auth\AuthController@refresh');
 	Route::resource('field', 'Setup\FieldController', ['only' => ['store','show','update','destroy']]);
 	Route::resource('column', 'Setup\ColumnController', ['only' => ['store','show','update','destroy']]);
 	Route::resource('option', 'Setup\OptionController', ['only' => ['store','update','destroy']]);
+
+	Route::resource('shops', 'Shops\ShopController', ['only' => ['index','store','show','update','destroy']]);
 //});
