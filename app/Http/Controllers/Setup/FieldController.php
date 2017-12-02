@@ -39,19 +39,10 @@ class FieldController extends Controller
 
         $field->save();
 
-        // $field_actions = [
-        //     'href'   => '/api/field/'.$field->id,
-        //     'method' => [
-        //         'update'  => 'PUT',
-        //         'destroy' => 'DELETE'
-        //     ]
-        // ];
-
-        // if (in_array($field->type, array('log','select','select_multiple'))) {
-        //     $field_actions['method']['show'] = 'GET';
-        // }
-
-        // $field->actions = $field_actions;
+        if ($field->type != 'log') {
+            $table = ($source_class === 'Shop') ? 'shops' : 'managers';
+            \App\Field::addColumnToTable($table, $field->column_name);
+        }
 
         $response = [
             'message' => "Field: {$field->title}, has been created.",

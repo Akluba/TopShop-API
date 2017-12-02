@@ -4,6 +4,8 @@ namespace App;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Blueprint;
 
 class Field extends Model
 {
@@ -34,5 +36,11 @@ class Field extends Model
         $column_name = ((is_null($last)) ? 'custom_1' : ++$last);
 
         return $column_name;
+    }
+
+    public static function addColumnToTable($table_name, $column_name) {
+        Schema::table($table_name, function (Blueprint $table) use ($column_name) {
+            $table->string($column_name)->nullable();
+        });
     }
 }

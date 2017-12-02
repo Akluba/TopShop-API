@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Shops;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Shop;
+use App\Category;
 
 class ShopController extends Controller
 {
@@ -63,22 +64,51 @@ class ShopController extends Controller
      */
     public function show($id)
     {
-        // $category = \App\Category::find($id);
-        // $fields = \App\Category::find($id)->fields;
+        $shop = \App\Shop::find($id);
+        $categories = \App\Category::where('source_class', 'Shop')->get();
 
-        // $data = [
-        //     'ancestor' => null,
-        //     'parent'   => null,
-        //     'primary'  => $category,
-        //     'children' => $fields
-        // ];
+        $data = [
+            'shop_name'  => $shop->shop_name,
+            'categories' => []
+        ];
 
-        // $response = [
-        //     'message' => "Displaying fields for Category: {$category->title}",
-        //     'data'    => $data
-        // ];
+        $data['categories'][] = [
+            'title' => 'Primary Details',
+            'fields'   => [
+                ['title' => 'Shop Name', 'value' => $shop->shop_name],
+                ['title' => 'Active', 'value' => $shop->active],
+                ['title' => 'Contact', 'value' => $shop->primary_contact],
+                ['title' => 'Phone', 'value' => $shop->primary_phone],
+                ['title' => 'Email', 'value' => $shop->primary_email],
+                ['title' => 'Address', 'value' => $shop->address],
+                ['title' => 'City', 'value' => $shop->city],
+                ['title' => 'State', 'value' => $shop->state],
+                ['title' => 'Zip Code', 'value' => $shop->zip_code],
+            ]
+        ];
 
-        // return response()->json($response, 200);
+        foreach ($categories as $category) {
+            $fields = $category->fields;
+            $field_value_pairs = [];
+            foreach($fields as $field) {
+                $field_value_pairs[] = [
+                    'title' => $field->title,
+                    'value' => $shop[$field->column_name]
+                ];
+            }
+
+            $data['categories'][] = [
+                'title'  => $category->title,
+                'fields' => $field_value_pairs
+            ];
+        }
+
+        $response = [
+            'message' => "Displaying shop details for: {$shop->shop_name}",
+            'data'    => $data
+        ];
+
+        return response()->json($response, 200);
     }
 
     /**
