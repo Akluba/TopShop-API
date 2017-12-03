@@ -73,33 +73,46 @@ class ShopController extends Controller
         ];
 
         $data['categories'][] = [
-            'title' => 'Primary Details',
+            'category' => 'Primary Details',
             'fields'   => [
-                ['title' => 'Shop Name', 'value' => $shop->shop_name],
-                ['title' => 'Active', 'value' => $shop->active],
-                ['title' => 'Contact', 'value' => $shop->primary_contact],
-                ['title' => 'Phone', 'value' => $shop->primary_phone],
-                ['title' => 'Email', 'value' => $shop->primary_email],
-                ['title' => 'Address', 'value' => $shop->address],
-                ['title' => 'City', 'value' => $shop->city],
-                ['title' => 'State', 'value' => $shop->state],
-                ['title' => 'Zip Code', 'value' => $shop->zip_code],
+                ['title' => 'Shop Name', 'value' => $shop->shop_name, 'column_name' => 'shop_name', 'type' => 'text'],
+                ['title' => 'Active', 'value' => $shop->active, 'column_name' => 'active', 'type' => 'checkbox'],
+                ['title' => 'Contact', 'value' => $shop->primary_contact, 'column_name' => 'primary_contact', 'type' => 'text'],
+                ['title' => 'Phone', 'value' => $shop->primary_phone, 'column_name' => 'primary_phone', 'type' => 'text'],
+                ['title' => 'Email', 'value' => $shop->primary_email, 'column_name' => 'primary_email', 'type' => 'text'],
+                ['title' => 'Address', 'value' => $shop->address, 'column_name' => 'address', 'type' => 'text'],
+                ['title' => 'City', 'value' => $shop->city, 'column_name' => 'city', 'type' => 'text'],
+                ['title' => 'State', 'value' => $shop->state, 'column_name' => 'state', 'type' => 'text'],
+                ['title' => 'Zip Code', 'value' => $shop->zip_code, 'column_name' => 'zip_code', 'type' => 'text'],
             ]
         ];
 
         foreach ($categories as $category) {
-            $fields = $category->fields;
-            $field_value_pairs = [];
-            foreach($fields as $field) {
-                $field_value_pairs[] = [
-                    'title' => $field->title,
-                    'value' => $shop[$field->column_name]
+            $fields = [];
+            foreach($category->fields as $field) {
+                $field_object = [
+                    'value'       => $shop[$field->column_name],
+                    'column_name' => $field->column_name,
+                    'title'       => $field->title,
+                    'type'        => $field->type,
                 ];
+
+                // Get select options for necessary fields.
+                if (in_array($field->type, array('select','select_multiple'))) {
+                    foreach($field->options as $option) {
+                        $field_object['options'][] = [
+                            'id'    => $option->id,
+                            'title' => $option->title
+                        ];
+                    }
+                }
+
+                $fields[] = $field_object;
             }
 
             $data['categories'][] = [
-                'title'  => $category->title,
-                'fields' => $field_value_pairs
+                'category' => $category->title,
+                'fields'   => $fields
             ];
         }
 
