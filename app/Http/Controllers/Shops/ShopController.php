@@ -68,6 +68,7 @@ class ShopController extends Controller
         $categories = \App\Category::where('source_class', 'Shop')->get();
 
         $data = [
+            'id'         => $shop->id,
             'shop_name'  => $shop->shop_name,
             'categories' => []
         ];
@@ -133,23 +134,17 @@ class ShopController extends Controller
      */
     public function update(Request $request, $id)
     {
-        // $request->validate([
-        //     'title'  => 'required',
-        // ]);
+        \App\Shop::where('id', $id)
+            ->update($request->toArray());
 
-        // $title = $request->input('title');
+        $shop = \App\Shop::find($id);
 
-        // $category = \App\Category::find($id);
+        $response = [
+            'message' => "{$shop->shop_name} has been updated.",
+            'data'    => $shop
+        ];
 
-        // $category->title = $title;
-        // $category->save();
-
-        // $response = [
-        //     'message' => "Category: {$category->title}, has been updated.",
-        //     'data'    => $category
-        // ];
-
-        // return response()->json($response, 201);
+        return response()->json($response, 201);
     }
 
     /**

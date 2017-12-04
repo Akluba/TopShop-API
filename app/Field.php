@@ -31,9 +31,18 @@ class Field extends Model
 
     public static function incrementColumnName()
     {
-        $last = self::withTrashed()->max('column_name');
+        $column_names = self::withTrashed()->get()->map(function($item, $key) {
+            return str_replace("custom_", "", $item['column_name']);
+        });
 
-        $column_name = ((is_null($last)) ? 'custom_1' : ++$last);
+        $last = $column_names->max();
+
+        if (is_null($last)) {
+            $column_name = 'custom_1';
+        }
+        else {
+            $column_name = 'custom_'.($last+1);
+        }
 
         return $column_name;
     }

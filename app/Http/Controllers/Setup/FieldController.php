@@ -30,13 +30,11 @@ class FieldController extends Controller
         $column_name  = \App\Field::incrementColumnName();
 
         $field = new Field;
-
         $field->source_class = $source_class;
         $field->category_id  = $category_id;
         $field->title        = $title;
         $field->type         = $type;
         $field->column_name  = $column_name;
-
         $field->save();
 
         if ($field->type != 'log') {
