@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Shop;
 use App\Category;
+use App\LogEntry;
 
 class ShopController extends Controller
 {
@@ -14,7 +15,7 @@ class ShopController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index(Request $request)
+    public function index()
     {
         $shops = \App\Shop::all();
 
@@ -35,18 +36,14 @@ class ShopController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'shop_name'       => 'required',
-            'primary_contact' => 'required',
-            'primary_phone'   => 'required',
-            'primary_email'   => 'required',
-            'address'         => 'required',
-            'city'            => 'required',
-            'state'           => 'required',
-            'zip_code'        => 'required',
+            'shop_name'       => 'required'
         ]);
 
-        $data = json_decode($request->getContent(), true);
-        $shop = \App\Shop::create($data);
+        $shop_name = $request->input('shop_name');
+
+        $shop = new Shop;
+        $shop->shop_name = $shop_name;
+        $shop->save();
 
         $response = [
             'message' => "Shop: {$shop->shop_name}, has been created.",
@@ -65,57 +62,49 @@ class ShopController extends Controller
     public function show($id)
     {
         $shop = \App\Shop::find($id);
+
+        // Get all log entries for the Shop.
+        $log_entries = $shop->log_entries;
+        // Group entries by field id.
+        $field_log_entries = $log_entries->mapToGroups(function($log_entry) {
+            return [$log_entry['field_id'] => $log_entry];
+        });
+
+        // Get Shop categories / fields / field options / field columns / column options.
         $categories = \App\Category::where('source_class', 'Shop')->get();
-
-        $data = [
-            'id'         => $shop->id,
-            'shop_name'  => $shop->shop_name,
-            'categories' => []
-        ];
-
-        $data['categories'][] = [
-            'category' => 'Primary Details',
-            'fields'   => [
-                ['title' => 'Shop Name', 'value' => $shop->shop_name, 'column_name' => 'shop_name', 'type' => 'text'],
-                ['title' => 'Active', 'value' => $shop->active, 'column_name' => 'active', 'type' => 'checkbox'],
-                ['title' => 'Contact', 'value' => $shop->primary_contact, 'column_name' => 'primary_contact', 'type' => 'text'],
-                ['title' => 'Phone', 'value' => $shop->primary_phone, 'column_name' => 'primary_phone', 'type' => 'text'],
-                ['title' => 'Email', 'value' => $shop->primary_email, 'column_name' => 'primary_email', 'type' => 'text'],
-                ['title' => 'Address', 'value' => $shop->address, 'column_name' => 'address', 'type' => 'text'],
-                ['title' => 'City', 'value' => $shop->city, 'column_name' => 'city', 'type' => 'text'],
-                ['title' => 'State', 'value' => $shop->state, 'column_name' => 'state', 'type' => 'text'],
-                ['title' => 'Zip Code', 'value' => $shop->zip_code, 'column_name' => 'zip_code', 'type' => 'text'],
-            ]
-        ];
-
         foreach ($categories as $category) {
-            $fields = [];
-            foreach($category->fields as $field) {
-                $field_object = [
-                    'value'       => $shop[$field->column_name],
-                    'column_name' => $field->column_name,
-                    'title'       => $field->title,
-                    'type'        => $field->type,
-                ];
-
-                // Get select options for necessary fields.
-                if (in_array($field->type, array('select','select_multiple'))) {
-                    foreach($field->options as $option) {
-                        $field_object['options'][] = [
-                            'id'    => $option->id,
-                            'title' => $option->title
-                        ];
+            $fields = $category->fields;
+            foreach($fields as $field) {
+                if ($field->type !== 'log') {
+                    // Get the value of the field.
+                    $field->value = $shop[$field->column_name];
+                    // Get select options for necessary fields.
+                    if (in_array($field->type, array('select','select_multiple'))) {
+                        $options = $field->options;
                     }
                 }
-
-                $fields[] = $field_object;
+                // Get columns for logging fields.
+                else {
+                    $columns = $field->columns;
+                    foreach ($columns as $column) {
+                        // Get select options for necessary logging fields.
+                        if (in_array($column->type, array('select','select_multiple'))) {
+                            $column->options;
+                        }
+                    }
+                    // Get log entries for logging field.
+                    if (!empty($field_log_entries->toArray())) {
+                        $field->log_entries = $field_log_entries->get($field->id)->all();
+                    }
+                }
             }
-
-            $data['categories'][] = [
-                'category' => $category->title,
-                'fields'   => $fields
-            ];
         }
+
+         $data = [
+            'id'         => $shop->id,
+            'shop_name'  => $shop->shop_name,
+            'categories' => $categories
+        ];
 
         $response = [
             'message' => "Displaying shop details for: {$shop->shop_name}",
@@ -134,8 +123,23 @@ class ShopController extends Controller
      */
     public function update(Request $request, $id)
     {
+        // Get the inputs from the request.
+        $inputs = $request->toArray();
+
+        // Update log entries
+        foreach ($inputs as $custom => $input) {
+            if (is_array($input)) {
+                $inputs[$custom] = null;
+                foreach ($input as $log_entry) {
+                    \App\LogEntry::where('id', $log_entry['id'])
+                        ->update($log_entry);
+                }
+            }
+        }
+
+        // Update shop inputs
         \App\Shop::where('id', $id)
-            ->update($request->toArray());
+            ->update($inputs);
 
         $shop = \App\Shop::find($id);
 

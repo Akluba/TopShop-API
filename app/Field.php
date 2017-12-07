@@ -21,7 +21,7 @@ class Field extends Model
 
     public function options()
     {
-    	return $this->hasMany('App\Option', 'source_id');
+    	return $this->hasMany('App\Option', 'source_id')->where('source_class', 'CustomField');;
     }
 
     public function columns()
@@ -37,12 +37,7 @@ class Field extends Model
 
         $last = $column_names->max();
 
-        if (is_null($last)) {
-            $column_name = 'custom_1';
-        }
-        else {
-            $column_name = 'custom_'.($last+1);
-        }
+        $column_name = ((is_null($last)) ? 'custom_1' : 'custom_'.($last+1));
 
         return $column_name;
     }

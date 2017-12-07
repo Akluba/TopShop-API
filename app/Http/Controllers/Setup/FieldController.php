@@ -37,10 +37,8 @@ class FieldController extends Controller
         $field->column_name  = $column_name;
         $field->save();
 
-        if ($field->type != 'log') {
-            $table = ($source_class === 'Shop') ? 'shops' : 'managers';
-            \App\Field::addColumnToTable($table, $field->column_name);
-        }
+        $table = ($source_class === 'Shop') ? 'shops' : 'managers';
+        \App\Field::addColumnToTable($table, $field->column_name);
 
         $response = [
             'message' => "Field: {$field->title}, has been created.",

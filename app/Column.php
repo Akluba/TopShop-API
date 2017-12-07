@@ -19,15 +19,20 @@ class Column extends Model
 
     public function options()
     {
-    	return $this->hasMany('App\Option', 'source_id');
+    	return $this->hasMany('App\Option', 'source_id')->where('source_class', 'CustomFieldLogColumn');
     }
 
     public static function incrementColumnName($field_id)
     {
-        $last = self::where('field_id', $field_id)->max('column_name');
+        $column_names = self::where('field_id', $field_id)->get()->map(function($item, $key) {
+            return str_replace("log_field", "", $item['column_name']);
+        });
 
-        $column_name = ((is_null($last)) ? 'LOG_FIELD1' : ++$last);
+        $last = $column_names->max();
+
+        $column_name = ((is_null($last)) ? 'log_field1' : 'log_field'.($last+1));
 
         return $column_name;
     }
+
 }
