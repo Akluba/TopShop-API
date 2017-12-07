@@ -131,8 +131,11 @@ class ShopController extends Controller
             if (is_array($input)) {
                 $inputs[$custom] = null;
                 foreach ($input as $log_entry) {
-                    \App\LogEntry::where('id', $log_entry['id'])
-                        ->update($log_entry);
+                    if ($log_entry['id'] === 0) {
+                        $this->storeLogEntry($log_entry);
+                    } else {
+                        $this->updateLogEntry($log_entry);
+                    }
                 }
             }
         }
@@ -170,4 +173,17 @@ class ShopController extends Controller
 
         // return response()->json($response, 200);
     }
+
+    private function storeLogEntry($log_entry)
+    {
+        unset($log_entry['id']);
+        \App\LogEntry::create($log_entry);
+    }
+
+    private function updateLogEntry($log_entry)
+    {
+        \App\LogEntry::where('id', $log_entry['id'])
+            ->update($log_entry);
+    }
+
 }
