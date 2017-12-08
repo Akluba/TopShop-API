@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Shops;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use App\Shop;
 use App\Category;
@@ -63,47 +64,38 @@ class ShopController extends Controller
     {
         $shop = \App\Shop::find($id);
 
-        // Get all log entries for the Shop.
-        $log_entries = $shop->log_entries;
-        // Group entries by field id.
-        $field_log_entries = $log_entries->mapToGroups(function($log_entry) {
+        // Group log entries by field id.
+        $field_log_entries = $shop->log_entries->mapToGroups(function($log_entry) {
             return [$log_entry['field_id'] => $log_entry];
         });
+
+        $field_log_entries->toArray();
 
         // Get Shop categories / fields / field options / field columns / column options.
         $categories = \App\Category::where('source_class', 'Shop')->get();
         foreach ($categories as $category) {
             $fields = $category->fields;
             foreach($fields as $field) {
-                if ($field->type !== 'log') {
-                    // Get the value of the field.
-                    $field->value = $shop[$field->column_name];
-                    // Get select options for necessary fields.
-                    if (in_array($field->type, array('select','select_multiple'))) {
-                        $options = $field->options;
-                    }
+                if (in_array($field->type, array('select','select_multiple'))) {
+                    $field->options;
                 }
-                // Get columns for logging fields.
-                else {
-                    $columns = $field->columns;
-                    foreach ($columns as $column) {
-                        // Get select options for necessary logging fields.
+                elseif ($field->type === 'log') {
+                    // Adding log entry array to shop object.
+                    $shop[$field->column_name] = $field_log_entries->get($field->id)->all();
+                    foreach($field->columns as $column) {
                         if (in_array($column->type, array('select','select_multiple'))) {
                             $column->options;
                         }
-                    }
-                    // Get log entries for logging field.
-                    if (!empty($field_log_entries->toArray())) {
-                        $field->log_entries = $field_log_entries->get($field->id)->all();
                     }
                 }
             }
         }
 
+        unset($shop->log_entries);
+
          $data = [
-            'id'         => $shop->id,
-            'shop_name'  => $shop->shop_name,
-            'categories' => $categories
+            'shop'            => $shop,
+            'form_elements'   => $categories
         ];
 
         $response = [
@@ -145,6 +137,7 @@ class ShopController extends Controller
             ->update($inputs);
 
         $shop = \App\Shop::find($id);
+        $shop->log_entries;
 
         $response = [
             'message' => "{$shop->shop_name} has been updated.",
