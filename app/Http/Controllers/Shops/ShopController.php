@@ -65,11 +65,9 @@ class ShopController extends Controller
         $shop = \App\Shop::find($id);
 
         // Group log entries by field id.
-        $field_log_entries = $shop->log_entries->mapToGroups(function($log_entry) {
+        $field_log_entries = $shop->log_entries->sortByDesc('id')->mapToGroups(function($log_entry) {
             return [$log_entry['field_id'] => $log_entry];
         });
-
-        $field_log_entries->toArray();
 
         // Get Shop categories / fields / field options / field columns / column options.
         $categories = \App\Category::where('source_class', 'Shop')->get();
@@ -81,7 +79,9 @@ class ShopController extends Controller
                 }
                 elseif ($field->type === 'log') {
                     // Adding log entry array to shop object.
-                    $shop[$field->column_name] = $field_log_entries->get($field->id)->all();
+                    if (!empty($field_log_entries->get($field->id))) {
+                        $shop[$field->column_name] = $field_log_entries->get($field->id)->all();
+                    }
                     foreach($field->columns as $column) {
                         if (in_array($column->type, array('select','select_multiple'))) {
                             $column->options;
@@ -125,7 +125,11 @@ class ShopController extends Controller
                 foreach ($input as $log_entry) {
                     if ($log_entry['id'] === 0) {
                         $this->storeLogEntry($log_entry);
-                    } else {
+                    }
+                    // elseif ($log_entry['destroy']) {
+                    //     $this->destroyLogEntry($log_entry['id']);
+                    // }
+                    else {
                         $this->updateLogEntry($log_entry);
                     }
                 }
@@ -137,7 +141,27 @@ class ShopController extends Controller
             ->update($inputs);
 
         $shop = \App\Shop::find($id);
-        $shop->log_entries;
+
+        // Group log entries by field id.
+        $field_log_entries = $shop->log_entries->sortByDesc('id')->mapToGroups(function($log_entry) {
+            return [$log_entry['field_id'] => $log_entry];
+        });
+
+        $field_log_entries->toArray();
+
+        $categories = \App\Category::where('source_class', 'Shop')->get();
+        foreach ($categories as $category) {
+            foreach($category->fields as $field) {
+                if ($field->type === 'log') {
+                    // Adding log entry array to shop object.
+                     if (!empty($field_log_entries->get($field->id))) {
+                        $shop[$field->column_name] = $field_log_entries->get($field->id)->all();
+                    }
+                }
+            }
+        }
+
+        unset($shop->log_entries);
 
         $response = [
             'message' => "{$shop->shop_name} has been updated.",
@@ -177,6 +201,11 @@ class ShopController extends Controller
     {
         \App\LogEntry::where('id', $log_entry['id'])
             ->update($log_entry);
+    }
+
+    private function destroyLogEntry($id) {
+        $log_entry = \App\LogEntry::find($id);
+        $log_entry->delete();
     }
 
 }
