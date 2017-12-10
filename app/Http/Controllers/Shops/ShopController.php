@@ -126,9 +126,9 @@ class ShopController extends Controller
                     if ($log_entry['id'] === 0) {
                         $this->storeLogEntry($log_entry);
                     }
-                    // elseif ($log_entry['destroy']) {
-                    //     $this->destroyLogEntry($log_entry['id']);
-                    // }
+                    elseif ($log_entry['deleted']) {
+                        $this->destroyLogEntry($log_entry['id']);
+                    }
                     else {
                         $this->updateLogEntry($log_entry);
                     }
@@ -193,12 +193,13 @@ class ShopController extends Controller
 
     private function storeLogEntry($log_entry)
     {
-        unset($log_entry['id']);
+        unset($log_entry['id'], $log_entry['deleted']);
         \App\LogEntry::create($log_entry);
     }
 
     private function updateLogEntry($log_entry)
     {
+        unset($log_entry['deleted']);
         \App\LogEntry::where('id', $log_entry['id'])
             ->update($log_entry);
     }
