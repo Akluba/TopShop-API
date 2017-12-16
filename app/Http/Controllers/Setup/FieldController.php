@@ -37,7 +37,7 @@ class FieldController extends Controller
         $field->column_name  = $column_name;
         $field->save();
 
-        $table = ($source_class === 'Shop') ? 'shops' : 'managers';
+        $table = ($source_class === 'shop') ? 'shops' : 'managers';
         \App\Field::addColumnToTable($table, $field->column_name);
 
         $response = [
@@ -59,7 +59,7 @@ class FieldController extends Controller
         $field = \App\Field::find($id);
         $category = $field->category;
 
-        if ($field->type == 'log') {
+        if (in_array($field->type, array('log','notes'))) {
             $children = \App\Field::find($id)->columns;
         }
         else {

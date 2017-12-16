@@ -77,7 +77,7 @@ class ShopController extends Controller
                 if (in_array($field->type, array('select','select_multiple'))) {
                     $field->options;
                 }
-                elseif ($field->type === 'log') {
+                elseif (in_array($field->type, array('log','notes'))) {
                     // Adding log entry array to shop object.
                     if (!empty($field_log_entries->get($field->id))) {
                         $shop[$field->column_name] = $field_log_entries->get($field->id)->all();
@@ -152,7 +152,7 @@ class ShopController extends Controller
         $categories = \App\Category::where('source_class', 'Shop')->get();
         foreach ($categories as $category) {
             foreach($category->fields as $field) {
-                if ($field->type === 'log') {
+                if (in_array($field->type, array('log','notes'))) {
                     // Adding log entry array to shop object.
                      if (!empty($field_log_entries->get($field->id))) {
                         $shop[$field->column_name] = $field_log_entries->get($field->id)->all();
