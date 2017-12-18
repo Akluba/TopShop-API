@@ -16,7 +16,7 @@ use Illuminate\Http\Request;
 Route::post('/auth/login', 'Auth\AuthController@login');
 Route::post('/auth/refresh', 'Auth\AuthController@refresh');
 
-//Route::middleware(['auth:api'])->group(function() {
+Route::middleware(['auth:api'])->group(function() {
 
 	/**
 	 * Auth Routes.
@@ -33,4 +33,4 @@ Route::post('/auth/refresh', 'Auth\AuthController@refresh');
 	Route::resource('option', 'Setup\OptionController', ['only' => ['store','update','destroy']]);
 
 	Route::resource('shops', 'Shops\ShopController', ['only' => ['index','store','show','update','destroy']]);
-//});
+});
