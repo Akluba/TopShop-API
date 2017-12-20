@@ -33,4 +33,5 @@ Route::middleware(['auth:api'])->group(function() {
 	Route::resource('option', 'Setup\OptionController', ['only' => ['store','update','destroy']]);
 
 	Route::resource('shops', 'Shops\ShopController', ['only' => ['index','store','show','update','destroy']]);
+	Route::resource('managers', 'Managers\ManagerController', ['only' => ['index','store','show','update','destroy']]);
 });

@@ -29,9 +29,9 @@ class Field extends Model
         return $this->hasMany('App\Column', 'field_id');
     }
 
-    public static function incrementColumnName()
+    public static function incrementColumnName($source_class)
     {
-        $column_names = self::withTrashed()->get()->map(function($item, $key) {
+        $column_names = self::withTrashed()->where('source_class', $source_class)->get()->map(function($item, $key) {
             return str_replace("custom_", "", $item['column_name']);
         });
 

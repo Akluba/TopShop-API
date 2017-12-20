@@ -27,7 +27,7 @@ class FieldController extends Controller
         $category_id  = $request->input('category_id');
         $title        = $request->input('title');
         $type         = $request->input('type');
-        $column_name  = \App\Field::incrementColumnName();
+        $column_name  = \App\Field::incrementColumnName($source_class);
 
         $field = new Field;
         $field->source_class = $source_class;
