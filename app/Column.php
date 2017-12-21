@@ -11,6 +11,7 @@ class Column extends Model
 
     protected $dates = ['deleted_at'];
     protected $hidden = ['created_at','updated_at','deleted_at'];
+    protected $fillable = ['field_id','column_name','type','title','system'];
 
     public function field()
     {

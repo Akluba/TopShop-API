@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
 
+use App\Column;
+
 class Field extends Model
 {
 	use SoftDeletes;
@@ -42,9 +44,22 @@ class Field extends Model
         return $column_name;
     }
 
-    public static function addColumnToTable($table_name, $column_name) {
+    public static function storeSystemColumns($field_id)
+    {
+        $field = self::find($field_id);
+
+        $field->columns()->saveMany([
+            new Column(['column_name' => 'log_field1', 'type' => 'user_stamp', 'title' => 'Created By', 'system' => 1]),
+            new Column(['column_name' => 'log_field2', 'type' => 'date_stamp', 'title' => 'Created Date', 'system' => 1]),
+            new Column(['column_name' => 'log_field3', 'type' => 'textarea', 'title' => 'Message', 'system' => 1]),
+        ]);
+    }
+
+    public static function addColumnToTable($table_name, $column_name)
+    {
         Schema::table($table_name, function (Blueprint $table) use ($column_name) {
             $table->string($column_name)->nullable();
         });
     }
+
 }

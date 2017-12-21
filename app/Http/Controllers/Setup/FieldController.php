@@ -40,6 +40,11 @@ class FieldController extends Controller
         $table = ($source_class === 'shop') ? 'shops' : 'managers';
         \App\Field::addColumnToTable($table, $field->column_name);
 
+        // Add default columns for notes field.
+        if ($field->type === 'notes') {
+            \App\Field::storeSystemColumns($field->id);
+        }
+
         $response = [
             'message' => "Field: {$field->title}, has been created.",
             'data'    => $field
