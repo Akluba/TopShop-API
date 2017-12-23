@@ -86,9 +86,9 @@ class ShopController extends Controller
                         if (in_array($column->type, array('select','select_multiple'))) {
                             $column->options;
                         }
-                        elseif ($column->type === 'manager_link') {
-                            $managers = \App\Manager::all();
-                            $column['options'] = $managers;
+                        elseif (in_array($column->type, array('manager_link','shop_link'))) {
+                            $links = ($column->type === 'manager_link') ? \App\Manager::all() : \App\Shop::all();
+                            $column['options'] = $links;
                         }
                     }
                 }
