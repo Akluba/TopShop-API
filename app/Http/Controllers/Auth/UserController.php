@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use App\Http\Controllers\Controller;
 use App\User;
 
@@ -54,6 +55,16 @@ class UserController extends Controller
 
         if ($authenticated_user['profile']  !== 'admin' && $authenticated_user['id'] !== $user['id']) {
             return response()->json(['message' => 'You do not have permission to make changes to this user.'], 401);
+        }
+
+        $password_group = $request->input('pwGroup');
+        if (!empty($password_group['newPW'])) {
+            if (!Hash::check($password_group['password'], $user['password'])) {
+                $message = "The current password you entered did not match your current password.";
+                return response()->json(['message' => $message], 401);
+            }
+
+            $user->password = Hash::make($password_group['newPW']);
         }
 
         $user->name = $request->input('name');
