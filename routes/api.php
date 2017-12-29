@@ -24,7 +24,7 @@ Route::middleware(['auth:api'])->group(function() {
 	Route::get('/auth/currentUser', 'Auth\AuthController@currentUser');
 	Route::post('/auth/logout', 'Auth\AuthController@logout');
 
-	Route::resource('user', 'Auth\UserController', ['only' => ['store','show','update','destroy']]);
+	Route::resource('users', 'Auth\UserController', ['only' => ['index','store','update','destroy']]);
 
 	/**
 	 * Field set up Routes.

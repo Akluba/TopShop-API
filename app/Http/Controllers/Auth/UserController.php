@@ -16,7 +16,14 @@ class UserController extends Controller
      */
     public function index()
     {
+        $users = \App\User::all();
 
+        $response = [
+            'message' => "List of active users",
+            'data'    => $users
+        ];
+
+        return response()->json($response, 201);
     }
 
     /**
@@ -26,17 +33,6 @@ class UserController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function store(Request $request)
-    {
-
-    }
-
-    /**
-     * Display the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function show(Request $request)
     {
 
     }
@@ -52,6 +48,25 @@ class UserController extends Controller
     {
         $authenticated_user = $request->user();
         $user = \App\User::find($id);
+
+        $component = $request->input('component');
+
+        if ($authenticated_user['profile']  === 'admin' && $component === 'manage') {
+            $request->validate([
+                'name' => 'required',
+                'email' => 'required',
+                'active' => 'required',
+                'profile' => 'required'
+            ]);
+
+            $user->active = $request->input('active');
+            $user->profile = $request->input('profile');
+        } else {
+            $request->validate([
+                'name' => 'required',
+                'email' => 'required'
+            ]);
+        }
 
         if ($authenticated_user['profile']  !== 'admin' && $authenticated_user['id'] !== $user['id']) {
             return response()->json(['message' => 'You do not have permission to make changes to this user.'], 401);
