@@ -34,7 +34,38 @@ class UserController extends Controller
      */
     public function store(Request $request)
     {
+        $authenticated_user = $request->user();
+        if ($authenticated_user['profile']  !== 'admin') {
+            $message = 'You do not have permission to add users.';
+            return response()->json(['message' => $message], 401);
+        }
 
+        $request->validate([
+            'name' => 'required',
+            'email' => 'required',
+            'active' => 'required',
+            'profile' => 'required'
+        ]);
+
+        $email = $request->input('email');
+
+        $password = substr($email, 0, strpos($email, '@')) .'#321';
+
+        $user = new User;
+        $user->name = $request->input('name');
+        $user->email = $email;
+        $user->password = Hash::make($password);
+        $user->active = $request->input('active');
+        $user->profile = $request->input('profile');
+
+        $user->save();
+
+        $response = [
+            'message' => "User: {$user->name}, has been created.",
+            'data'    => $user
+        ];
+
+        return response()->json($response, 201);
     }
 
     /**
