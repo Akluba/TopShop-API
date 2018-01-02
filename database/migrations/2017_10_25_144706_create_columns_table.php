@@ -20,6 +20,7 @@ class CreateColumnsTable extends Migration
             $table->string('column_name');
             $table->string('type');
             $table->string('title');
+            $table->boolean('system');
             $table->softDeletes();
         });
     }

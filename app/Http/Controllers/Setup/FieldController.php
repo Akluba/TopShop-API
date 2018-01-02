@@ -23,7 +23,7 @@ class FieldController extends Controller
             'type'         => 'required'
         ]);
 
-        $source_class = $request->input('source_class');
+        $source_class = ucfirst($request->input('source_class'));
         $category_id  = $request->input('category_id');
         $title        = $request->input('title');
         $type         = $request->input('type');
@@ -37,7 +37,7 @@ class FieldController extends Controller
         $field->column_name  = $column_name;
         $field->save();
 
-        $table = ($source_class === 'shop') ? 'shops' : 'managers';
+        $table = ($source_class === 'Shop') ? 'shops' : 'managers';
         \App\Field::addColumnToTable($table, $field->column_name);
 
         // Add default columns for notes field.

@@ -70,7 +70,7 @@ class ManagerController extends Controller
         });
 
         // Get Shop categories / fields / field options / field columns / column options.
-        $categories = \App\Category::where('source_class', 'manager')->get();
+        $categories = \App\Category::where('source_class', 'Manager')->get();
         foreach ($categories as $category) {
             $fields = $category->fields;
             foreach($fields as $field) {
@@ -149,7 +149,7 @@ class ManagerController extends Controller
 
         $field_log_entries->toArray();
 
-        $categories = \App\Category::where('source_class', 'manager')->get();
+        $categories = \App\Category::where('source_class', 'Manager')->get();
         foreach ($categories as $category) {
             foreach($category->fields as $field) {
                 if (in_array($field->type, array('log','notes'))) {
@@ -179,16 +179,7 @@ class ManagerController extends Controller
      */
     public function destroy($id)
     {
-        // $category = \App\Category::find($id);
 
-        // $category->delete();
-
-        // $response = [
-        //     'message' => "Category: {$category->title}, has been deleted.",
-        //     'data'    => $category
-        // ];
-
-        // return response()->json($response, 200);
     }
 
     private function storeLogEntry($log_entry)

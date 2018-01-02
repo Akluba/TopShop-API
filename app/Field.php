@@ -58,7 +58,7 @@ class Field extends Model
     public static function addColumnToTable($table_name, $column_name)
     {
         Schema::table($table_name, function (Blueprint $table) use ($column_name) {
-            $table->string($column_name)->nullable();
+            $table->longText($column_name)->nullable();
         });
     }
 

@@ -183,16 +183,7 @@ class ShopController extends Controller
      */
     public function destroy($id)
     {
-        // $category = \App\Category::find($id);
 
-        // $category->delete();
-
-        // $response = [
-        //     'message' => "Category: {$category->title}, has been deleted.",
-        //     'data'    => $category
-        // ];
-
-        // return response()->json($response, 200);
     }
 
     private function storeLogEntry($log_entry)

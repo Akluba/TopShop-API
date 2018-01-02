@@ -19,7 +19,7 @@ class CategoryController extends Controller
             'source_class' => 'required'
         ]);
 
-        $source_class = $request->input('source_class');
+        $source_class = ucfirst($request->input('source_class'));
 
         $categories = \App\Category::where('source_class', $source_class)->get();
 
@@ -51,7 +51,7 @@ class CategoryController extends Controller
             'title'        => 'required'
         ]);
 
-        $source_class = $request->input('source_class');
+        $source_class = ucfirst($request->input('source_class'));
         $title        = $request->input('title');
 
         $category = new Category;

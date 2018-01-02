@@ -14,7 +14,7 @@ class Manager extends Model
 
     public function log_entries()
     {
-    	return $this->hasMany('App\LogEntry', 'source_id')->where('source_class', 'manager');
+    	return $this->hasMany('App\LogEntry', 'source_id')->where('source_class', 'Manager');
     }
 
 }
