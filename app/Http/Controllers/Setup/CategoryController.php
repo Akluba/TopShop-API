@@ -31,7 +31,7 @@ class CategoryController extends Controller
         ];
 
         $response = [
-            'message' => 'List of all Shop Categories',
+            'message' => "List of all {$source_class} Categories",
             'data'    => $data
         ];
 
