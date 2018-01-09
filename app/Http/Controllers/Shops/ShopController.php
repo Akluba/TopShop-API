@@ -121,6 +121,7 @@ class ShopController extends Controller
     {
         // Get the inputs from the request.
         $inputs = $request->toArray();
+        unset($inputs['_method']);
 
         // Update log entries
         foreach ($inputs as $custom => $input) {
