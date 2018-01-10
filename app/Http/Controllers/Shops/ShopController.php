@@ -184,7 +184,16 @@ class ShopController extends Controller
      */
     public function destroy($id)
     {
+        $shop = \App\Shop::find($id);
 
+        $shop->delete();
+
+        $response = [
+            'message' => "Shop: {$shop->shop_name}, has been deleted.",
+            'data'    => $shop
+        ];
+
+        return response()->json($response, 200);
     }
 
     private function storeLogEntry($log_entry)

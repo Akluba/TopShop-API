@@ -180,7 +180,16 @@ class ManagerController extends Controller
      */
     public function destroy($id)
     {
+        $manager = \App\Manager::find($id);
 
+        $manager->delete();
+
+        $response = [
+            'message' => "Manager: {$manager->manager_name}, has been deleted.",
+            'data'    => $manager
+        ];
+
+        return response()->json($response, 200);
     }
 
     private function storeLogEntry($log_entry)
