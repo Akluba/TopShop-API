@@ -51,7 +51,7 @@ class Field extends Model
         $field->columns()->saveMany([
             new Column(['column_name' => 'log_field1', 'type' => 'user_stamp', 'title' => 'Created By', 'system' => 1]),
             new Column(['column_name' => 'log_field2', 'type' => 'date_stamp', 'title' => 'Created Date', 'system' => 1]),
-            new Column(['column_name' => 'log_field3', 'type' => 'textarea', 'title' => 'Message', 'system' => 1]),
+            new Column(['column_name' => 'log_field3', 'type' => 'note_text', 'title' => 'Message', 'system' => 1]),
         ]);
     }
 
