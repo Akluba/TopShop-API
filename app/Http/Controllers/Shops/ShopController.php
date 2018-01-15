@@ -20,9 +20,60 @@ class ShopController extends Controller
     {
         $shops = \App\Shop::all();
 
+        // Get Shop categories / fields / field options / field columns / column options.
+        $categories = \App\Category::where('source_class', 'Shop')
+            ->where('system','!=',1)
+            ->orWhereNull('system')
+            ->get();
+
+        $field_array = array();
+
+        foreach ($categories as $category) {
+            $fields = $category->fields;
+            foreach($fields as $field) {
+                if ($field->type !== 'log') {
+                    $field_array[$field->column_name] = [
+                        'type' => $field->type,
+                        'title' => $field->title
+                    ];
+                    if (in_array($field->type, array('select','select_multiple'))) {
+                        $options = $field->options->keyBy('id');
+                        $field_array[$field->column_name]['options'] = $options;
+                    }
+                }
+            }
+        }
+
+        $shops->map(function ($shop) use ($field_array){
+            foreach ($field_array as $custom => $field) {
+                if (!is_null($shop[$custom]) && in_array($field['type'], array('select','select_multiple'))) {
+                    if ($field['type'] === 'select_multiple') {
+                        $option_array = array();
+                        foreach (json_decode($shop[$custom]) as $option) {
+                            $option_array[] = $field['options'][$option]['title'];
+                        }
+                        $option_string = implode(", ", $option_array);
+                        $shop[$custom] = $option_string;
+                    } else {
+                        $shop[$custom] = $field['options'][$shop[$custom]]['title'];
+                    }
+                } elseif ($field['type'] === 'checkbox') {
+                    $shop[$custom] = $shop[$custom] ? 'true' : 'false';
+                }
+            }
+
+            return $shop;
+        });
+
+
+        $data = [
+            'shop_list' => $shops,
+            'fields' => $field_array
+        ];
+
         $response = [
             'message' => 'List of all Active Shops',
-            'data'    => $shops
+            'data'    => $data
         ];
 
         return response()->json($response, 200);
