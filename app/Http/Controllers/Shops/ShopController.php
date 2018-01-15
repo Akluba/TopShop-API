@@ -7,10 +7,18 @@ use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use App\Shop;
 use App\Category;
+use App\User;
 use App\LogEntry;
 
 class ShopController extends Controller
 {
+    private $users;
+
+    public function __construct()
+    {
+        $this->users = \App\User::all();
+    }
+
     /**
      * Display a listing of the resource.
      *
@@ -116,7 +124,7 @@ class ShopController extends Controller
         $shop = \App\Shop::find($id);
 
         // Group log entries by field id.
-        $field_log_entries = $shop->log_entries->sortByDesc('id')->mapToGroups(function($log_entry) {
+        $log_entries = $shop->log_entries->sortByDesc('id')->mapToGroups(function($log_entry) {
             return [$log_entry['field_id'] => $log_entry];
         });
 
@@ -130,9 +138,18 @@ class ShopController extends Controller
                 }
                 elseif (in_array($field->type, array('log','notes'))) {
                     // Adding log entry array to shop object.
-                    if (!empty($field_log_entries->get($field->id))) {
-                        $shop[$field->column_name] = $field_log_entries->get($field->id)->all();
+                    if (!empty($log_entries->get($field->id))) {
+                        $field_log_entries = $log_entries->get($field->id)->all();
+
+                        if ($field->type === 'notes') {
+                            foreach ($field_log_entries as $index => $note) {
+                                $field_log_entries[$index]['log_field1'] = $this->userIdToName($note['log_field1']);
+                            }
+                        }
+
+                        $shop[$field->column_name] = $field_log_entries;
                     }
+                    // Get select options for field.
                     foreach($field->columns as $column) {
                         if (in_array($column->type, array('select','select_multiple'))) {
                             $column->options;
@@ -175,19 +192,25 @@ class ShopController extends Controller
         unset($inputs['_method']);
 
         // Update log entries
-        foreach ($inputs as $custom => $input) {
-            if (is_array($input)) {
-                $inputs[$custom] = null;
-                foreach ($input as $log_entry) {
-                    if ($log_entry['id'] === 0) {
-                        $this->storeLogEntry($log_entry);
+        $categories = \App\Category::where('source_class', 'Shop')->get();
+        foreach ($categories as $category) {
+            foreach($category->fields as $field) {
+                if (in_array($field->type, array('log','notes'))) {
+                    foreach ($inputs[$field->column_name] as $log_entry) {
+                        if ($log_entry['id'] === 0) {
+                            $this->storeLogEntry($log_entry);
+                        }
+                        elseif ($log_entry['deleted']) {
+                            $this->destroyLogEntry($log_entry['id']);
+                        }
+                        else {
+                            if ($field->type === 'notes') {
+                                $log_entry['log_field1'] = $this->userNameToId($log_entry['log_field1']);
+                            }
+                            $this->updateLogEntry($log_entry);
+                        }
                     }
-                    elseif ($log_entry['deleted']) {
-                        $this->destroyLogEntry($log_entry['id']);
-                    }
-                    else {
-                        $this->updateLogEntry($log_entry);
-                    }
+                    $inputs[$field->column_name] = null;
                 }
             }
         }
@@ -199,19 +222,25 @@ class ShopController extends Controller
         $shop = \App\Shop::find($id);
 
         // Group log entries by field id.
-        $field_log_entries = $shop->log_entries->sortByDesc('id')->mapToGroups(function($log_entry) {
+        $log_entries = $shop->log_entries->sortByDesc('id')->mapToGroups(function($log_entry) {
             return [$log_entry['field_id'] => $log_entry];
         });
-
-        $field_log_entries->toArray();
 
         $categories = \App\Category::where('source_class', 'Shop')->get();
         foreach ($categories as $category) {
             foreach($category->fields as $field) {
                 if (in_array($field->type, array('log','notes'))) {
                     // Adding log entry array to shop object.
-                     if (!empty($field_log_entries->get($field->id))) {
-                        $shop[$field->column_name] = $field_log_entries->get($field->id)->all();
+                    if (!empty($log_entries->get($field->id))) {
+                        $field_log_entries = $log_entries->get($field->id)->all();
+
+                        if ($field->type === 'notes') {
+                            foreach ($field_log_entries as $index => $note) {
+                                $field_log_entries[$index]['log_field1'] = $this->userIdToName($note['log_field1']);
+                            }
+                        }
+
+                        $shop[$field->column_name] = $field_log_entries;
                     }
                 }
             }
@@ -245,6 +274,20 @@ class ShopController extends Controller
         ];
 
         return response()->json($response, 200);
+    }
+
+    private function userIdToName($id)
+    {
+        $users = $this->users->keyBy('id');
+
+        return $users[$id]->name;
+    }
+
+    private function userNameToId($name)
+    {
+        $users = $this->users->keyBy('name');
+
+        return $users[$name]->id;
     }
 
     private function storeLogEntry($log_entry)
