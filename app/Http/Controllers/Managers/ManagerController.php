@@ -11,6 +11,13 @@ use App\LogEntry;
 
 class ManagerController extends Controller
 {
+    private $users;
+
+    public function __construct()
+    {
+        $this->users = \App\User::all();
+    }
+
     /**
      * Display a listing of the resource.
      *
@@ -47,7 +54,7 @@ class ManagerController extends Controller
         $manager->save();
 
         $response = [
-            'message' => "Shop: {$manager->manager_name}, has been created.",
+            'message' => "Manager: {$manager->manager_name}, has been created.",
             'data'    => $manager
         ];
 
@@ -65,11 +72,11 @@ class ManagerController extends Controller
         $manager = \App\Manager::find($id);
 
         // Group log entries by field id.
-        $field_log_entries = $manager->log_entries->sortByDesc('id')->mapToGroups(function($log_entry) {
+        $log_entries = $manager->log_entries->sortByDesc('id')->mapToGroups(function($log_entry) {
             return [$log_entry['field_id'] => $log_entry];
         });
 
-        // Get Shop categories / fields / field options / field columns / column options.
+        // Get Manager categories / fields / field options / field columns / column options.
         $categories = \App\Category::where('source_class', 'Manager')->get();
         foreach ($categories as $category) {
             $fields = $category->fields;
@@ -78,9 +85,17 @@ class ManagerController extends Controller
                     $field->options;
                 }
                 elseif (in_array($field->type, array('log','notes'))) {
-                    // Adding log entry array to shop object.
-                    if (!empty($field_log_entries->get($field->id))) {
-                        $manager[$field->column_name] = $field_log_entries->get($field->id)->all();
+                    // Adding log entry array to manager object.
+                    if (!empty($log_entries->get($field->id))) {
+                        $field_log_entries = $log_entries->get($field->id)->all();
+
+                        if ($field->type === 'notes') {
+                            foreach ($field_log_entries as $index => $note) {
+                                $field_log_entries[$index]['log_field1'] = $this->userIdToName($note['log_field1']);
+                            }
+                        }
+
+                        $manager[$field->column_name] = $field_log_entries;
                     }
                     foreach($field->columns as $column) {
                         if (in_array($column->type, array('select','select_multiple'))) {
@@ -120,43 +135,55 @@ class ManagerController extends Controller
         unset($inputs['_method']);
 
         // Update log entries
-        foreach ($inputs as $custom => $input) {
-            if (is_array($input)) {
-                $inputs[$custom] = null;
-                foreach ($input as $log_entry) {
-                    if ($log_entry['id'] === 0) {
-                        $this->storeLogEntry($log_entry);
+        $categories = \App\Category::where('source_class', 'Manager')->get();
+        foreach ($categories as $category) {
+            foreach($category->fields as $field) {
+                if (in_array($field->type, array('log','notes'))) {
+                    foreach ($inputs[$field->column_name] as $log_entry) {
+                        if ($log_entry['id'] === 0) {
+                            $this->storeLogEntry($log_entry);
+                        }
+                        elseif ($log_entry['deleted']) {
+                            $this->destroyLogEntry($log_entry['id']);
+                        }
+                        else {
+                            if ($field->type === 'notes') {
+                                $log_entry['log_field1'] = $this->userNameToId($log_entry['log_field1']);
+                            }
+                            $this->updateLogEntry($log_entry);
+                        }
                     }
-                    elseif ($log_entry['deleted']) {
-                        $this->destroyLogEntry($log_entry['id']);
-                    }
-                    else {
-                        $this->updateLogEntry($log_entry);
-                    }
+                    $inputs[$field->column_name] = null;
                 }
             }
         }
 
-        // Update shop inputs
+        // Update manager inputs
         \App\Manager::where('id', $id)
             ->update($inputs);
 
         $manager = \App\Manager::find($id);
 
         // Group log entries by field id.
-        $field_log_entries = $manager->log_entries->sortByDesc('id')->mapToGroups(function($log_entry) {
+        $log_entries = $manager->log_entries->sortByDesc('id')->mapToGroups(function($log_entry) {
             return [$log_entry['field_id'] => $log_entry];
         });
-
-        $field_log_entries->toArray();
 
         $categories = \App\Category::where('source_class', 'Manager')->get();
         foreach ($categories as $category) {
             foreach($category->fields as $field) {
                 if (in_array($field->type, array('log','notes'))) {
-                    // Adding log entry array to shop object.
-                     if (!empty($field_log_entries->get($field->id))) {
-                        $manager[$field->column_name] = $field_log_entries->get($field->id)->all();
+                    // Adding log entry array to manager object.
+                    if (!empty($log_entries->get($field->id))) {
+                        $field_log_entries = $log_entries->get($field->id)->all();
+
+                        if ($field->type === 'notes') {
+                            foreach ($field_log_entries as $index => $note) {
+                                $field_log_entries[$index]['log_field1'] = $this->userIdToName($note['log_field1']);
+                            }
+                        }
+
+                        $manager[$field->column_name] = $field_log_entries;
                     }
                 }
             }
@@ -190,6 +217,20 @@ class ManagerController extends Controller
         ];
 
         return response()->json($response, 200);
+    }
+
+    private function userIdToName($id)
+    {
+        $users = $this->users->keyBy('id');
+
+        return $users[$id]->name;
+    }
+
+    private function userNameToId($name)
+    {
+        $users = $this->users->keyBy('name');
+
+        return $users[$name]->id;
     }
 
     private function storeLogEntry($log_entry)
