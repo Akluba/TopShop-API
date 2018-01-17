@@ -16,6 +16,8 @@ use Illuminate\Http\Request;
 Route::post('/auth/login', 'Auth\AuthController@login');
 Route::post('/auth/refresh', 'Auth\AuthController@refresh');
 
+Route::post('/emailReminders', 'Shared\ReminderController@index');
+
 Route::middleware(['auth:api'])->group(function() {
 
 	/**
