@@ -28,6 +28,8 @@ Route::middleware(['auth:api'])->group(function() {
 
 	Route::resource('users', 'Auth\UserController', ['only' => ['index','store','update','destroy']]);
 
+	Route::get('/dash/notes', 'Shared\DashController@index');
+
 	/**
 	 * Field set up Routes.
 	 */
