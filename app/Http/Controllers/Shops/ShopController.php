@@ -30,8 +30,9 @@ class ShopController extends Controller
 
         // Get Shop categories / fields / field options / field columns / column options.
         $categories = \App\Category::where('source_class', 'Shop')
-            ->where('system','!=',1)
-            ->orWhereNull('system')
+            // ->where('system','!=',1)
+            // ->orWhereNull('system')
+            ->where('system', null)
             ->get();
 
         $field_array = array();
