@@ -130,7 +130,10 @@ class ShopController extends Controller
         });
 
         // Get Shop categories / fields / field options / field columns / column options.
-        $categories = \App\Category::where('source_class', 'Shop')->get();
+        $categories = \App\Category::where('source_class', 'Shop')
+            ->get()
+            ->sortBy('sort_order');
+
         foreach ($categories as $category) {
             $fields = $category->fields;
             foreach($fields as $field) {
@@ -166,9 +169,11 @@ class ShopController extends Controller
 
         unset($shop->log_entries);
 
+        $form_elements = $categories->values()->all();
+
          $data = [
             'shop'            => $shop,
-            'form_elements'   => $categories
+            'form_elements'   => $form_elements
         ];
 
         $response = [
