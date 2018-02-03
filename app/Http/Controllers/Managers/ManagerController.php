@@ -77,7 +77,10 @@ class ManagerController extends Controller
         });
 
         // Get Manager categories / fields / field options / field columns / column options.
-        $categories = \App\Category::where('source_class', 'Manager')->get();
+        $categories = \App\Category::where('source_class', 'Manager')
+            ->get()
+            ->sortBy('sort_order');
+
         foreach ($categories as $category) {
             $fields = $category->fields;
             foreach($fields as $field) {
@@ -108,9 +111,11 @@ class ManagerController extends Controller
 
         unset($manager->log_entries);
 
+        $form_elements = $categories->values()->all();
+
          $data = [
             'manager'       => $manager,
-            'form_elements' => $categories
+            'form_elements' => $form_elements
         ];
 
         $response = [
