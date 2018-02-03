@@ -20,13 +20,15 @@ class FieldController extends Controller
             'source_class' => 'required',
             'category_id'  => 'required',
             'title'        => 'required',
-            'type'         => 'required'
+            'type'         => 'required',
+            'sort_order'   => 'required',
         ]);
 
         $source_class = ucfirst($request->input('source_class'));
         $category_id  = $request->input('category_id');
         $title        = $request->input('title');
         $type         = $request->input('type');
+        $sort_order   = $request->input('sort_order');
         $column_name  = \App\Field::incrementColumnName($source_class);
 
         $field = new Field;
@@ -35,6 +37,7 @@ class FieldController extends Controller
         $field->title        = $title;
         $field->type         = $type;
         $field->column_name  = $column_name;
+        $field->sort_order   = $sort_order;
         $field->save();
 
         $table = ($source_class === 'Shop') ? 'shops' : 'managers';
@@ -96,14 +99,17 @@ class FieldController extends Controller
     public function update(Request $request, $id)
     {
         $request->validate([
-            'title'  => 'required',
+            'title'      => 'required',
+            'sort_order' => 'required',
         ]);
 
-        $title = $request->input('title');
+        $title      = $request->input('title');
+        $sort_order = $request->input('sort_order');
 
         $field = \App\Field::find($id);
 
         $field->title = $title;
+        $field->sort_order = $sort_order;
         $field->save();
 
         $response = [

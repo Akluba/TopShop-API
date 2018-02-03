@@ -48,16 +48,19 @@ class CategoryController extends Controller
     {
         $request->validate([
             'source_class' => 'required',
-            'title'        => 'required'
+            'title'        => 'required',
+            'sort_order'   => 'required',
         ]);
 
         $source_class = ucfirst($request->input('source_class'));
-        $title        = $request->input('title');
+        $title = $request->input('title');
+        $sort_order = $request->input('sort_order');
 
         $category = new Category;
 
         $category->source_class = $source_class;
-        $category->title        = $title;
+        $category->title = $title;
+        $category->sort_order = $sort_order;
 
         $category->save();
 
@@ -106,13 +109,16 @@ class CategoryController extends Controller
     {
         $request->validate([
             'title'  => 'required',
+            'sort_order' => 'required',
         ]);
 
         $title = $request->input('title');
+        $sort_order = $request->input('sort_order');
 
         $category = \App\Category::find($id);
 
         $category->title = $title;
+        $category->sort_order = $sort_order;
         $category->save();
 
         $response = [

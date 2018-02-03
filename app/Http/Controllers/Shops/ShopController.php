@@ -135,8 +135,7 @@ class ShopController extends Controller
             ->sortBy('sort_order');
 
         foreach ($categories as $category) {
-            $fields = $category->fields;
-            foreach($fields as $field) {
+            foreach($category->fields as $field) {
                 if (in_array($field->type, array('select','select_multiple'))) {
                     $field->options;
                 }

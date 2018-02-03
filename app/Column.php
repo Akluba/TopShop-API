@@ -20,7 +20,7 @@ class Column extends Model
 
     public function options()
     {
-    	return $this->hasMany('App\Option', 'source_id')->where('source_class', 'CustomFieldLogColumn');
+    	return $this->hasMany('App\Option', 'source_id')->where('source_class', 'CustomFieldLogColumn')->orderBy('sort_order');
     }
 
     public static function incrementColumnName($field_id)

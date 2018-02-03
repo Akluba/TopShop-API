@@ -18,14 +18,16 @@ class ColumnController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'field_id' => 'required',
-            'type'     => 'required',
-            'title'    => 'required'
+            'field_id'   => 'required',
+            'type'       => 'required',
+            'title'      => 'required',
+            'sort_order' => 'required',
         ]);
 
-        $field_id = $request->input('field_id');
-        $type     = $request->input('type');
-        $title    = $request->input('title');
+        $field_id   = $request->input('field_id');
+        $type       = $request->input('type');
+        $title      = $request->input('title');
+        $sort_order = $request->input('sort_order');
         $column_name  = \App\Column::incrementColumnName($field_id);
 
         $column = New Column;
@@ -34,6 +36,7 @@ class ColumnController extends Controller
         $column->column_name = $column_name;
         $column->type        = $type;
         $column->title       = $title;
+        $column->sort_order  = $sort_order;
 
         $column->save();
 
@@ -87,13 +90,16 @@ class ColumnController extends Controller
     {
         $request->validate([
             'title'  => 'required',
+            'sort_order' => 'required',
         ]);
 
         $title = $request->input('title');
+        $sort_order = $request->input('sort_order');
 
         $column = \App\Column::find($id);
 
         $column->title = $title;
+        $column->sort_order = $sort_order;
         $column->save();
 
         $response = [

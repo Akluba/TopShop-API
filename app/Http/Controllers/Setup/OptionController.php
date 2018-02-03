@@ -20,18 +20,21 @@ class OptionController extends Controller
         $request->validate([
             'source_class' => 'required',
             'source_id'    => 'required',
-            'title'        => 'required'
+            'title'        => 'required',
+            'sort_order' => 'required',
         ]);
 
         $source_class = $request->input('source_class');
         $source_id    = $request->input('source_id');
         $title        = $request->input('title');
+        $sort_order   = $request->input('sort_order');
 
         $option = New Option;
 
         $option->source_class = $source_class;
         $option->source_id    = $source_id;
         $option->title        = $title;
+        $option->sort_order   = $sort_order;
 
         $option->save();
 
@@ -54,13 +57,16 @@ class OptionController extends Controller
     {
         $request->validate([
             'title'  => 'required',
+            'sort_order' => 'required',
         ]);
 
         $title = $request->input('title');
+        $sort_order = $request->input('sort_order');
 
         $option = \App\Option::find($id);
 
         $option->title = $title;
+        $option->sort_order = $sort_order;
         $option->save();
 
         $response = [
