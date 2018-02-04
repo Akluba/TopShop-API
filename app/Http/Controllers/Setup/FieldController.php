@@ -98,6 +98,11 @@ class FieldController extends Controller
      */
     public function update(Request $request, $id)
     {
+        if ($id == 0) {
+            $this->update_sort_order($request->input('data'));
+            return response()->json(['message' => 'sort order updated.'], 201);
+        }
+
         $request->validate([
             'title'      => 'required',
             'sort_order' => 'required',
@@ -118,6 +123,16 @@ class FieldController extends Controller
         ];
 
         return response()->json($response, 201);
+    }
+
+    public function update_sort_order(array $values)
+    {
+        foreach ($values as $value) {
+            $id = $value['id'];
+            $field = \App\Field::find($id);
+            $field->sort_order = $value['sort_order'];
+            $field->save();
+        }
     }
 
     /**

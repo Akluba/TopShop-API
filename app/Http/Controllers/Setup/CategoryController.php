@@ -21,13 +21,15 @@ class CategoryController extends Controller
 
         $source_class = ucfirst($request->input('source_class'));
 
-        $categories = \App\Category::where('source_class', $source_class)->get();
+        $categories = \App\Category::where('source_class', $source_class)
+        ->get()
+        ->sortBy('sort_order');
 
         $data = [
             'ancestor' => null,
             'parent'   => null,
             'primary'  => null,
-            'children' => $categories
+            'children' => $categories->values()->all()
         ];
 
         $response = [
@@ -107,6 +109,11 @@ class CategoryController extends Controller
      */
     public function update(Request $request, $id)
     {
+        if ($id == 0) {
+            $this->update_sort_order($request->input('data'));
+            return response()->json(['message' => 'sort order updated.'], 201);
+        }
+
         $request->validate([
             'title'  => 'required',
             'sort_order' => 'required',
@@ -127,6 +134,16 @@ class CategoryController extends Controller
         ];
 
         return response()->json($response, 201);
+    }
+
+    public function update_sort_order(array $values)
+    {
+        foreach ($values as $value) {
+            $id = $value['id'];
+            $category = \App\Category::find($id);
+            $category->sort_order = $value['sort_order'];
+            $category->save();
+        }
     }
 
     /**
