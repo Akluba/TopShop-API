@@ -23,12 +23,12 @@ class Field extends Model
 
     public function options()
     {
-    	return $this->hasMany('App\Option', 'source_id')->where('source_class', 'CustomField')->orderBy('sort_order');
+    	return $this->hasMany('App\Option', 'source_id')->where('source_class', 'CustomField');
     }
 
     public function columns()
     {
-        return $this->hasMany('App\Column', 'field_id')->orderBy('sort_order');
+        return $this->hasMany('App\Column', 'field_id');
     }
 
     public static function incrementColumnName($source_class)

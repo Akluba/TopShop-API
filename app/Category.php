@@ -14,7 +14,7 @@ class Category extends Model
 
     public function fields()
     {
-    	return $this->hasMany('App\Field')->orderBy('sort_order');
+    	return $this->hasMany('App\Field');
     }
 
 }
