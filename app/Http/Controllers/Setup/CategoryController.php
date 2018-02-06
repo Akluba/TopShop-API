@@ -21,15 +21,13 @@ class CategoryController extends Controller
 
         $source_class = ucfirst($request->input('source_class'));
 
-        $categories = \App\Category::where('source_class', $source_class)
-        ->get()
-        ->sortBy('sort_order');
+        $categories = \App\Category::where('source_class', $source_class)->get();
 
         $data = [
             'ancestor' => null,
             'parent'   => null,
             'primary'  => null,
-            'children' => $categories->values()->all()
+            'children' => $categories
         ];
 
         $response = [
