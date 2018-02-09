@@ -49,9 +49,9 @@ class Field extends Model
         $field = self::find($field_id);
 
         $field->columns()->saveMany([
-            new Column(['column_name' => 'log_field1', 'type' => 'user_stamp', 'title' => 'Created By', 'system' => 1]),
-            new Column(['column_name' => 'log_field2', 'type' => 'date_stamp', 'title' => 'Created Date', 'system' => 1]),
-            new Column(['column_name' => 'log_field3', 'type' => 'note_text', 'title' => 'Message', 'system' => 1]),
+            new Column(['column_name' => 'log_field1', 'type' => 'user_stamp', 'title' => 'Created By', 'sort_order' => 1, 'system' => 1]),
+            new Column(['column_name' => 'log_field2', 'type' => 'date_stamp', 'title' => 'Created Date', 'sort_order' => 2, 'system' => 1]),
+            new Column(['column_name' => 'log_field3', 'type' => 'note_text', 'title' => 'Message', 'sort_order' => 3, 'system' => 1]),
         ]);
     }
 
