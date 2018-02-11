@@ -10,6 +10,13 @@ use App\Vendor;
 class VendorController extends Controller
 {
 
+    private $users;
+
+    public function __construct()
+    {
+        $this->users = \App\User::all();
+    }
+
     /**
      * Display a listing of the resource.
      *
@@ -73,7 +80,7 @@ class VendorController extends Controller
             return [$log_entry['field_id'] => $log_entry];
         });
 
-        // Get Shop categories / fields / field options / field columns / column options.
+        // Get Vendor categories / fields / field options / field columns / column options.
         $categories = \App\Category::where('source_class', 'Vendor')->get();
 
         foreach ($categories as $category) {
@@ -82,7 +89,7 @@ class VendorController extends Controller
                     $field->options;
                 }
                 elseif (in_array($field->type, array('log','notes'))) {
-                    // Adding log entry array to shop object.
+                    // Adding log entry array to vendor object.
                     if (!empty($log_entries->get($field->id))) {
                         $field_log_entries = $log_entries->get($field->id)->all();
 
@@ -132,7 +139,73 @@ class VendorController extends Controller
      */
     public function update(Request $request, $id)
     {
+        // Get the inputs from the request.
+        $inputs = $request->toArray();
+        unset($inputs['id'], $inputs['_method']);
 
+        // Update log entries
+        $categories = \App\Category::where('source_class', 'Vendor')->get();
+        foreach ($categories as $category) {
+            foreach($category->fields as $field) {
+                if (in_array($field->type, array('log','notes')) && array_key_exists($field->column_name, $inputs)) {
+                    foreach ($inputs[$field->column_name] as $log_entry) {
+                        if ($log_entry['id'] === 0) {
+                            $this->storeLogEntry($log_entry);
+                        }
+                        elseif ($log_entry['deleted']) {
+                            $this->destroyLogEntry($log_entry['id']);
+                        }
+                        else {
+                            if ($field->type === 'notes') {
+                                $log_entry['log_field1'] = $this->userNameToId($log_entry['log_field1']);
+                            }
+                            $this->updateLogEntry($log_entry);
+                        }
+                    }
+                    $inputs[$field->column_name] = null;
+                }
+            }
+        }
+
+        // Update vendor inputs
+        Vendor::where('id', $id)
+            ->update($inputs);
+
+        $vendor = Vendor::find($id);
+
+        // Group log entries by field id.
+        $log_entries = $vendor->log_entries->sortByDesc('id')->mapToGroups(function($log_entry) {
+            return [$log_entry['field_id'] => $log_entry];
+        });
+
+        $categories = \App\Category::where('source_class', 'Vendor')->get();
+        foreach ($categories as $category) {
+            foreach($category->fields as $field) {
+                if (in_array($field->type, array('log','notes'))) {
+                    // Adding log entry array to vendor object.
+                    if (!empty($log_entries->get($field->id))) {
+                        $field_log_entries = $log_entries->get($field->id)->all();
+
+                        if ($field->type === 'notes') {
+                            foreach ($field_log_entries as $index => $note) {
+                                $field_log_entries[$index]['log_field1'] = $this->userIdToName($note['log_field1']);
+                            }
+                        }
+
+                        $vendor[$field->column_name] = $field_log_entries;
+                    }
+                }
+            }
+        }
+
+        unset($vendor->log_entries);
+
+        $response = [
+            'message' => "{$vendor->name} has been updated.",
+            'vendor'    => $vendor
+        ];
+
+        return response()->json($response, 200);
     }
 
     /**
@@ -144,6 +217,38 @@ class VendorController extends Controller
     public function destroy($id)
     {
 
+    }
+
+    private function userIdToName($id)
+    {
+        $users = $this->users->keyBy('id');
+
+        return $users[$id]->name;
+    }
+
+    private function userNameToId($name)
+    {
+        $users = $this->users->keyBy('name');
+
+        return $users[$name]->id;
+    }
+
+    private function storeLogEntry($log_entry)
+    {
+        unset($log_entry['id'], $log_entry['deleted']);
+        \App\LogEntry::create($log_entry);
+    }
+
+    private function updateLogEntry($log_entry)
+    {
+        unset($log_entry['deleted']);
+        \App\LogEntry::where('id', $log_entry['id'])
+            ->update($log_entry);
+    }
+
+    private function destroyLogEntry($id) {
+        $log_entry = \App\LogEntry::find($id);
+        $log_entry->delete();
     }
 
 }
