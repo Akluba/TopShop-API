@@ -95,17 +95,17 @@ class ShopController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'shop_name'       => 'required'
+            'name'       => 'required'
         ]);
 
-        $shop_name = $request->input('shop_name');
+        $name = $request->input('name');
 
         $shop = new Shop;
-        $shop->shop_name = $shop_name;
+        $shop->name = $name;
         $shop->save();
 
         $response = [
-            'message' => "Shop: {$shop->shop_name}, has been created.",
+            'message' => "Shop: {$shop->name}, has been created.",
             'data'    => $shop
         ];
 
@@ -170,7 +170,7 @@ class ShopController extends Controller
         ];
 
         $response = [
-            'message' => "Displaying shop details for: {$shop->shop_name}",
+            'message' => "Displaying shop details for: {$shop->name}",
             'data'    => $data
         ];
 
@@ -248,7 +248,7 @@ class ShopController extends Controller
         unset($shop->log_entries);
 
         $response = [
-            'message' => "{$shop->shop_name} has been updated.",
+            'message' => "{$shop->name} has been updated.",
             'data'    => $shop
         ];
 
@@ -268,7 +268,7 @@ class ShopController extends Controller
         $shop->delete();
 
         $response = [
-            'message' => "Shop: {$shop->shop_name}, has been deleted.",
+            'message' => "Shop: {$shop->name}, has been deleted.",
             'data'    => $shop
         ];
 

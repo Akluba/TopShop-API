@@ -44,17 +44,17 @@ class ManagerController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'manager_name'       => 'required'
+            'name'       => 'required'
         ]);
 
-        $manager_name = $request->input('manager_name');
+        $name = $request->input('name');
 
         $manager = new Manager;
-        $manager->manager_name = $manager_name;
+        $manager->name = $name;
         $manager->save();
 
         $response = [
-            'message' => "Manager: {$manager->manager_name}, has been created.",
+            'message' => "Manager: {$manager->name}, has been created.",
             'data'    => $manager
         ];
 
@@ -115,7 +115,7 @@ class ManagerController extends Controller
         ];
 
         $response = [
-            'message' => "Displaying manager details for: {$manager->manager_name}",
+            'message' => "Displaying manager details for: {$manager->name}",
             'data'    => $data
         ];
 
@@ -193,7 +193,7 @@ class ManagerController extends Controller
         unset($manager->log_entries);
 
         $response = [
-            'message' => "{$manager->manager_name} has been updated.",
+            'message' => "{$manager->name} has been updated.",
             'data'    => $manager
         ];
 
@@ -213,7 +213,7 @@ class ManagerController extends Controller
         $manager->delete();
 
         $response = [
-            'message' => "Manager: {$manager->manager_name}, has been deleted.",
+            'message' => "Manager: {$manager->name}, has been deleted.",
             'data'    => $manager
         ];
 

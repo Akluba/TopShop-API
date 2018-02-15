@@ -9,13 +9,15 @@ use App\Http\Controllers\Controller;
 
 class ReminderController extends Controller
 {
-	private $shops;
-	private $managers;
+	private $sources;
 
-	public function __construct()
+	function __construct()
 	{
-		$this->shops = \App\Shop::all();
-		$this->managers = \App\Manager::all();
+        $this->sources = [
+            'Shop' => \App\Shop::all()->keyBy('id'),
+            'Manager' => \App\Manager::all()->keyBy('id'),
+            'Vendor' => \App\Vendor::all()->keyBy('id')
+        ];
 	}
 
 	public function index()
@@ -58,12 +60,11 @@ class ReminderController extends Controller
 
     private function getName($source_class, $source_id)
     {
-    	$names = $source_class === 'Shop' ? $this->shops : $this->managers;
-    	$names = $names->keyBy('id');
+    	$names = $this->sources[$source_class];
+    	//$names = $source_class === 'Shop' ? $this->shops : $this->managers;
+    	//$names = $names->keyBy('id');
 
-    	$name_key = $source_class === 'Shop' ? 'shop_name' : 'manager_name';
-
-    	return $names[$source_id][$name_key];
+    	return $names[$source_id]['name'];
     }
 
 }

@@ -27,35 +27,48 @@ class Note {
 class DashController extends Controller
 {
 	private $users;
-	private $shops;
-	private $managers;
+	private $sources;
 
 	function __construct()
 	{
 		$this->users = \App\User::all()->keyBy('id');
-		$this->shops = \App\Shop::all()->keyBy('id');
-		$this->managers = \App\Manager::all()->keyBy('id');
+        $this->sources = [
+            'Shop' => \App\Shop::all()->keyBy('id'),
+            'Manager' => \App\Manager::all()->keyBy('id'),
+            'Vendor' => \App\Vendor::all()->keyBy('id')
+        ];
 	}
 
     public function index()
     {
+        // Get all note fields.
     	$note_fields = \App\Field::where('type', 'notes')
     		->get();
 
+        // Collection to add formatted notes to.
     	$notes = collect();
 
     	foreach ($note_fields as $field) {
 
+            // Get non system columns.
     		$tag_columns = \App\Column::where('field_id', $field->id)
     			->whereNull('system')
     			->get(['column_name','type']);
 
+            // Get note entries, exclude entries with deleted source_id records.
+            $name_array = $this->sources[$field->source_class]
+                ->pluck('id')
+                ->toArray();
+
     		$field_notes = \App\LogEntry::where('field_id', $field->id)
+                ->whereIn('source_id', $name_array)
     			->get();
 
+            // Insert formatted notes into notes collection.
     		$notes[] = $field_notes->map(function ($note) use ($tag_columns) {
     			$note_tags = null;
-    			if ($tag_columns) {
+    			// When tag columns exist, format them.
+                if ($tag_columns) {
     				$note_tags = $tag_columns->map(function ($column) use ($note) {
     					if (!is_null($note[$column['column_name']])) {
 	    					return $this->extractTagData($note, $column);
@@ -91,7 +104,7 @@ class DashController extends Controller
     		]];
     	})->toArray();
 
-    	$notes = $notes->flatten(1)->sortByDesc('created_date')
+    	$notes = $notes->flatten(1)
     		->values()->all();
 
     	$response = [
@@ -111,13 +124,12 @@ class DashController extends Controller
     		];
     	}
 
-    	$source = $column['type'] === 'shop_link' ? $this->shops : $this->managers;
-    	$name_key = $column['type'] === 'shop_link' ? 'shop_name' : 'manager_name';
+        $source = ($column['type'] === 'shop_link') ? $this->sources['Shop'] : $this->sources['Manager'];
 
     	return [
     		'type' => $column['type'],
     		'id' => $note[$column['column_name']],
-    		'value' => $source[$note[$column['column_name']]][$name_key]
+    		'value' => $source[$note[$column['column_name']]]['name']
     	];
     }
 
@@ -127,9 +139,8 @@ class DashController extends Controller
     		return $this->users[$id]->name;
     	}
 
-    	$source = $source_class === 'Shop' ? $this->shops : $this->managers;
-    	$name_key = $source_class === 'Shop' ? 'shop_name' : 'manager_name';
+        $source = $this->sources[$source_class];
 
-    	return $source[$id][$name_key];
+    	return $source[$id]['name'];
     }
 }
