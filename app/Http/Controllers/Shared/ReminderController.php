@@ -24,32 +24,35 @@ class ReminderController extends Controller
     {
     	date_default_timezone_set('EST');
 
+		// Get array of employees.
 		$user_email_queue = \App\User::whereIn('profile',['admin','employee'])
 			->get(['id','name','email'])
 			->keyBy('id')
 			->toArray();
 
-		$reminder_columns = \App\Column::where('type','reminder_date')->get();
-		foreach ($reminder_columns as $reminder_column) {
+		// Get Columns w/ type of reminder_date.
+		$reminder_columns = \App\Column::where('type','reminder_date')
+			->get();
 
+		foreach ($reminder_columns as $reminder_column) {
+			// Get all reminder_date log entries w/ today's date.
 			$log_entries = \App\LogEntry::where('field_id', $reminder_column['field_id'])
 				->where($reminder_column['column_name'], date("Y-m-d"))
 				->get();
 
 			foreach ($log_entries as $log_entry) {
+				// Format the note.
 				$reminder = [
 					'name' => $this->getName($log_entry->source_class, $log_entry->source_id),
 					'note' => $log_entry->log_field3
 				];
 
-				if ($log_entry->source_class === 'Shop') {
-					$user_email_queue[$log_entry->log_field1]['reminders']['shops'][] = $reminder;
-				} else {
-					$user_email_queue[$log_entry->log_field1]['reminders']['managers'][] = $reminder;
-				}
+				// Place the reminder in the queue of the employee who created the note.
+				$user_email_queue[$log_entry->log_field1]['reminders'][$log_entry->source_class][] = $reminder;
 			}
 		}
 
+		// Loop thru the user array, if they have reminders, mail them out.
 		foreach ($user_email_queue as $email) {
 			if (array_key_exists('reminders', $email)) {
 				// return new TodaysReminders($email['reminders']);
@@ -61,9 +64,6 @@ class ReminderController extends Controller
     private function getName($source_class, $source_id)
     {
     	$names = $this->sources[$source_class];
-    	//$names = $source_class === 'Shop' ? $this->shops : $this->managers;
-    	//$names = $names->keyBy('id');
-
     	return $names[$source_id]['name'];
     }
 

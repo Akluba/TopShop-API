@@ -32,8 +32,7 @@ class TodaysReminders extends Mailable
     {
         return $this->view('emails.reminders')
             ->with([
-                'shop_reminders' => $this->reminders['shops'],
-                'manager_reminders' => $this->reminders['managers']
+                'reminders' => $this->reminders
             ]);
     }
 }
