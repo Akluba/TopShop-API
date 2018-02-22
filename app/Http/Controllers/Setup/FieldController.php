@@ -40,7 +40,7 @@ class FieldController extends Controller
         $field->sort_order   = $sort_order;
         $field->save();
 
-        $table = strtolower($source_class) .'s';
+        $table = ($source_class == 'Cpr') ? strtolower($source_class) : strtolower($source_class) .'s';
         \App\Field::addColumnToTable($table, $field->column_name);
 
         // Add default columns for notes field.
