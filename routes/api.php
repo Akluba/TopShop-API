@@ -30,6 +30,9 @@ Route::middleware(['auth:api'])->group(function() {
 
 	Route::get('/dash/notes', 'Shared\DashController@index');
 
+	Route::get('/search', 'Shared\SearchController@index');
+	Route::post('/search', 'Shared\SearchController@results');
+
 	/**
 	 * Field set up Routes.
 	 */
