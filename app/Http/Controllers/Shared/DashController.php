@@ -35,7 +35,8 @@ class DashController extends Controller
         $this->sources = [
             'Shop' => \App\Shop::all()->keyBy('id'),
             'Manager' => \App\Manager::all()->keyBy('id'),
-            'Vendor' => \App\Vendor::all()->keyBy('id')
+            'Vendor' => \App\Vendor::all()->keyBy('id'),
+            'Cpr' => \App\CPR::all()->keyBy('id')
         ];
     }
 
@@ -75,10 +76,10 @@ class DashController extends Controller
                         }
                     })->toArray();
                 }
-                
+
                 // Filter out Null values.
                 $note_tags = array_filter($note_tags);
-                
+
                 // When note tags are empty, set to null
                 $note_tags = !empty($note_tags) ? array_values($note_tags) : null;
 
