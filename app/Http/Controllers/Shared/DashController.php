@@ -40,11 +40,16 @@ class DashController extends Controller
         ];
     }
 
-    public function index()
+    public function index(Request $request)
     {
         // Get all note fields.
         $note_fields = \App\Field::where('type', 'notes')
             ->get();
+
+        // Quick hack to limit CPR users to only see CPR Notes.
+        if ($request->user()->profile === 'cpr') {
+            $note_fields = $note_fields->where('source_class', 'Cpr');
+        }
 
         // Collection to add formatted notes to.
         $notes = collect();
