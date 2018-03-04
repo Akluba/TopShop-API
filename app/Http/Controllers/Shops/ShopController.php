@@ -59,8 +59,7 @@ class ShopController extends Controller
                         foreach (json_decode($shop[$custom]) as $option) {
                             $option_array[] = $field['options'][$option]['title'];
                         }
-                        $option_string = implode(", ", $option_array);
-                        $shop[$custom] = $option_string;
+                        $shop[$custom] = $option_array;
                     } else {
                         $shop[$custom] = $field['options'][$shop[$custom]]['title'];
                     }

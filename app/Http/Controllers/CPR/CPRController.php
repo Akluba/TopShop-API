@@ -24,15 +24,59 @@ class CPRController extends Controller
      */
     public function index()
     {
+        $contacts = CPR::all();
 
-        $cpr_list = CPR::all();
+        // Get CPR categories / fields / field options / field columns / column options.
+        $categories = \App\Category::where('source_class', 'Cpr')
+            ->where('system', null)
+            ->get();
+
+        $field_array = array();
+
+        foreach ($categories as $category) {
+            $fields = $category->fields;
+            foreach($fields as $field) {
+                if ($field->type !== 'log') {
+                    $field_array[$field->column_name] = [
+                        'type' => $field->type,
+                        'title' => $field->title
+                    ];
+                    if (in_array($field->type, array('select','select_multiple'))) {
+                        $options = $field->options->keyBy('id');
+                        $field_array[$field->column_name]['options'] = $options;
+                    }
+                }
+            }
+        }
+
+        $contacts->map(function ($contact) use ($field_array){
+            foreach ($field_array as $custom => $field) {
+                if (!is_null($contact[$custom]) && in_array($field['type'], array('select','select_multiple'))) {
+                    if ($field['type'] === 'select_multiple') {
+                        $option_array = array();
+                        foreach (json_decode($contact[$custom]) as $option) {
+                            $option_array[] = $field['options'][$option]['title'];
+                        }
+                        $contact[$custom] = $option_array;
+                    } else {
+                        $contact[$custom] = $field['options'][$contact[$custom]]['title'];
+                    }
+                } elseif ($field['type'] === 'checkbox') {
+                    $contact[$custom] = $contact[$custom] ? 'true' : 'false';
+                }
+            }
+
+            return $contact;
+        });
+
 
         $data = [
-            'cpr_list' => $cpr_list
+            'contact_list' => $contacts,
+            'fields' => $field_array
         ];
 
         $response = [
-            'message' => 'List of all CRP',
+            'message' => 'List of all Contacts',
             'data'    => $data
         ];
 
@@ -216,7 +260,16 @@ class CPRController extends Controller
      */
     public function destroy($id)
     {
+        $contact = CPR::find($id);
 
+        $contact->delete();
+
+        $response = [
+            'message' => "Contact: {$contact->name}, has been deleted.",
+            'data'    => $contact
+        ];
+
+        return response()->json($response, 200);
     }
 
     private function userIdToName($id)

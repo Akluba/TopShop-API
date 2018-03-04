@@ -27,9 +27,57 @@ class ManagerController extends Controller
     {
         $managers = \App\Manager::all();
 
+        // Get Manager categories / fields / field options / field columns / column options.
+        $categories = \App\Category::where('source_class', 'Manager')
+            ->where('system', null)
+            ->get();
+
+        $field_array = array();
+
+        foreach ($categories as $category) {
+            $fields = $category->fields;
+            foreach($fields as $field) {
+                if ($field->type !== 'log') {
+                    $field_array[$field->column_name] = [
+                        'type' => $field->type,
+                        'title' => $field->title
+                    ];
+                    if (in_array($field->type, array('select','select_multiple'))) {
+                        $options = $field->options->keyBy('id');
+                        $field_array[$field->column_name]['options'] = $options;
+                    }
+                }
+            }
+        }
+
+        $managers->map(function ($manager) use ($field_array){
+            foreach ($field_array as $custom => $field) {
+                if (!is_null($manager[$custom]) && in_array($field['type'], array('select','select_multiple'))) {
+                    if ($field['type'] === 'select_multiple') {
+                        $option_array = array();
+                        foreach (json_decode($manager[$custom]) as $option) {
+                            $option_array[] = $field['options'][$option]['title'];
+                        }
+                        $manager[$custom] = $option_array;
+                    } else {
+                        $manager[$custom] = $field['options'][$manager[$custom]]['title'];
+                    }
+                } elseif ($field['type'] === 'checkbox') {
+                    $manager[$custom] = $manager[$custom] ? 'true' : 'false';
+                }
+            }
+
+            return $manager;
+        });
+
+        $data = [
+            'manager_list' => $managers,
+            'fields' => $field_array
+        ];
+
         $response = [
-            'message' => 'List of all Active Managers',
-            'data'    => $managers
+            'message' => 'List of all Managers',
+            'data'    => $data
         ];
 
         return response()->json($response, 200);

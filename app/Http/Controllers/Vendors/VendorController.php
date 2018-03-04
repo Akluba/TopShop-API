@@ -25,10 +25,55 @@ class VendorController extends Controller
     public function index()
     {
 
-        $vendor_list = Vendor::all();
+        $vendors = Vendor::all();
+
+        // Get Vendor categories / fields / field options / field columns / column options.
+        $categories = \App\Category::where('source_class', 'Vendor')
+            ->where('system', null)
+            ->get();
+
+        $field_array = array();
+
+        foreach ($categories as $category) {
+            $fields = $category->fields;
+            foreach($fields as $field) {
+                if ($field->type !== 'log') {
+                    $field_array[$field->column_name] = [
+                        'type' => $field->type,
+                        'title' => $field->title
+                    ];
+                    if (in_array($field->type, array('select','select_multiple'))) {
+                        $options = $field->options->keyBy('id');
+                        $field_array[$field->column_name]['options'] = $options;
+                    }
+                }
+            }
+        }
+
+        $vendors->map(function ($vendor) use ($field_array){
+            foreach ($field_array as $custom => $field) {
+                if (!is_null($vendor[$custom]) && in_array($field['type'], array('select','select_multiple'))) {
+                    if ($field['type'] === 'select_multiple') {
+                        $option_array = array();
+                        foreach (json_decode($vendor[$custom]) as $option) {
+                            $option_array[] = $field['options'][$option]['title'];
+                        }
+                        $vendor[$custom] = $option_array;
+                    } else {
+                        $vendor[$custom] = $field['options'][$vendor[$custom]]['title'];
+                    }
+                } elseif ($field['type'] === 'checkbox') {
+                    $vendor[$custom] = $vendor[$custom] ? 'true' : 'false';
+                }
+            }
+
+            return $vendor;
+        });
+
 
         $data = [
-            'vendor_list' => $vendor_list
+            'vendor_list' => $vendors,
+            'fields' => $field_array
         ];
 
         $response = [
@@ -216,7 +261,16 @@ class VendorController extends Controller
      */
     public function destroy($id)
     {
+        $vendor = Vendor::find($id);
 
+        $vendor->delete();
+
+        $response = [
+            'message' => "Vendor: {$vendor->name}, has been deleted.",
+            'data'    => $vendor
+        ];
+
+        return response()->json($response, 200);
     }
 
     private function userIdToName($id)
