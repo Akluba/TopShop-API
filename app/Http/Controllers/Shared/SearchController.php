@@ -92,19 +92,16 @@ class SearchController extends Controller
         $query = \App\LogEntry::select();
 
         foreach ($filters as $field_id => $field_filters) {
-            // Filter on field_id.
+            // Set field_id filter.
             $query->where('field_id', $field_id);
 
-            // Filter out null filters.
-            $set_filters = array_filter($field_filters, function($filter_array) {
-                return array_filter($filter_array, function($filter) {
-                    return $filter;
-                });
-            });
+            foreach ($field_filters as $filter_array) {
+                // Remove null filters.
+                $valid_filters = array_filter($filter_array);
 
-            if ($set_filters) {
-                foreach ($set_filters as $filter_group) {
-                    $this->setFilters($query, $filter_group);
+                // Set log_field filters.
+                if ($valid_filters) {
+                    $this->setFilters($query, $valid_filters);
                 }
             }
         }
@@ -112,57 +109,57 @@ class SearchController extends Controller
         // Get all the log entry records that match the filters.
         $matches = $query->get();
 
-		// Create array of ids that matched filters.
-		$sources = $matches
-			->pluck('source_id')
-			->unique();
+        // Get field Elements for the field being searched.
+        $columns = \App\Field::find($field_id)->columns;
 
-		// Get all records
-		$records = $this->getSourceRecords($source_class);
-
-		// Filter records to those that match the filter criteria.
-		$filtered_records = $records
-			->whereIn('id', $sources)
-            ->flatten(1);
-
-        $field_array = \App\Category::elements($source_class);
-
-        $filtered_records->map(function ($record) use ($field_array){
-            foreach ($field_array as $custom => $field) {
-                if (!is_null($record[$custom]) && in_array($field['type'], array('select','select_multiple'))) {
-                    if ($field['type'] === 'select_multiple') {
-                        $option_array = array();
-                        foreach (json_decode($record[$custom]) as $option) {
-                            $option_array[] = $field['options'][$option]['title'];
-                        }
-                        $record[$custom] = $option_array;
-                    } else {
-                        $record[$custom] = $field['options'][$record[$custom]]['title'];
-                    }
-                } elseif ($field['type'] === 'checkbox') {
-                    $record[$custom] = $record[$custom] ? 'true' : 'false';
-                }
+        // Add Options array for necessary column types.
+        $columns = $columns->map(function ($column) {
+            if (in_array($column->type, ['select','select_multiple'])) {
+                $options = $column->options->keyBy('id');
+                $column->options = $options;
             }
 
-            return $record;
+            return $column;
+        })->keyBy('column_name');
+
+        // Format match records.
+        $matches = $matches->map(function ($match) use ($columns, $source_class) {
+            foreach ($columns as $log_field => $column) {
+                $this->formatMatchLogField($match, $log_field, $column);
+            }
+
+            $match->name = $this->getSourceRecords($source_class)->keyBy('id')->find($match->source_id)->name;
+
+            return $match;
         });
 
-    	$response = [
-            'matches' => $filtered_records,
-            'fields' => $field_array
-    	];
+        $response = [
+            'matches' => $matches,
+            'columns' => $columns
+        ];
 
-    	return response()->json($response, 200);
+        return response()->json($response, 200);
     }
 
-    private function setFilters($query, $filters)
+    private function getSourceRecords($source_class)
     {
-    	foreach ($filters as $col => $value) {
-			if ($value)
-                $query->where($col, $value);
-		}
-
-    	return $query;
+        switch ($source_class) {
+            case 'shop':
+                return \App\Shop::all();
+                break;
+            case 'manager':
+                return \App\Manager::all();
+                break;
+            case 'vendor':
+                return \App\Vendor::all();
+                break;
+            case 'cpr':
+                return \App\CPR::all();
+                break;
+            case 'user':
+                return \App\User::all();
+                break;
+        }
     }
 
     private function noteType($source_class)
@@ -176,22 +173,36 @@ class SearchController extends Controller
         }
     }
 
-    private function getSourceRecords($source_class)
+    private function setFilters($query, $filters)
     {
-    	switch ($source_class) {
-    		case 'shop':
-    			return \App\Shop::all();
-    			break;
-    		case 'manager':
-    			return \App\Manager::all();
-    			break;
-    		case 'vendor':
-    			return \App\Vendor::all();
-    			break;
-            case 'cpr':
-                return \App\CPR::all();
-                break;
-    	}
+        foreach ($filters as $col => $value) {
+            $query->where($col, $value);
+        }
+
+        return $query;
     }
 
+    private function formatMatchLogField($match, $log_field, $column)
+    {
+        if (!is_null($match[$log_field]) && in_array($column['type'], array('select','select_multiple'))) {
+            if ($column['type'] === 'select_multiple') {
+                $option_array = array();
+                foreach (json_decode($match[$log_field]) as $option) {
+                    $option_array[] = $column['options'][$option]['title'];
+                }
+                $match[$log_field] = $option_array;
+            } else {
+                $match[$log_field] = $column['options'][$match[$log_field]]['title'];
+            }
+        } elseif ($column['type'] === 'checkbox') {
+            $match[$log_field] = $match[$log_field] ? 'true' : 'false';
+        } elseif ($column['type'] === 'user_stamp') {
+            $match[$log_field] = $this->getSourceRecords('user')->keyBy('id')->find($match[$log_field])->name;
+        } elseif (!is_null($match[$log_field]) && in_array($column['type'], ['shop_link', 'manager_link'])) {
+            $link_source_class = str_replace('_link', '', $column->type);
+            $match[$log_field] = $this->getSourceRecords($link_source_class)->keyBy('id')->find($match[$log_field])->name;
+        }
+
+        return $match;
+    }
 }
