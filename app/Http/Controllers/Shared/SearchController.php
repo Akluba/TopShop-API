@@ -145,16 +145,16 @@ class SearchController extends Controller
     {
         switch ($source_class) {
             case 'shop':
-                return \App\Shop::all();
+                return \App\Shop::withTrashed()->get();
                 break;
             case 'manager':
-                return \App\Manager::all();
+                return \App\Manager::withTrashed()->get();
                 break;
             case 'vendor':
-                return \App\Vendor::all();
+                return \App\Vendor::withTrashed()->get();
                 break;
             case 'cpr':
-                return \App\CPR::all();
+                return \App\CPR::withTrashed()->get();
                 break;
             case 'user':
                 return \App\User::all();
