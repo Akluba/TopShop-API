@@ -187,13 +187,13 @@ class ShopController extends Controller
     {
         // Get the inputs from the request.
         $inputs = $request->toArray();
-        unset($inputs['_method']);
+        unset($inputs['id'], $inputs['_method']);
 
         // Update log entries
         $categories = \App\Category::where('source_class', 'Shop')->get();
         foreach ($categories as $category) {
             foreach($category->fields as $field) {
-                if (in_array($field->type, array('log','notes'))) {
+                if (in_array($field->type, array('log','notes')) && array_key_exists($field->column_name, $inputs)) {
                     foreach ($inputs[$field->column_name] as $log_entry) {
                         if ($log_entry['id'] === 0) {
                             $this->storeLogEntry($log_entry);
@@ -214,10 +214,10 @@ class ShopController extends Controller
         }
 
         // Update shop inputs
-        \App\Shop::where('id', $id)
+        Shop::where('id', $id)
             ->update($inputs);
 
-        $shop = \App\Shop::find($id);
+        $shop = Shop::find($id);
 
         // Group log entries by field id.
         $log_entries = $shop->log_entries->sortByDesc('id')->mapToGroups(function($log_entry) {
@@ -248,10 +248,10 @@ class ShopController extends Controller
 
         $response = [
             'message' => "{$shop->name} has been updated.",
-            'data'    => $shop
+            'shop'    => $shop
         ];
 
-        return response()->json($response, 201);
+        return response()->json($response, 200);
     }
 
     /**

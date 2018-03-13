@@ -185,13 +185,13 @@ class ManagerController extends Controller
     {
         // Get the inputs from the request.
         $inputs = $request->toArray();
-        unset($inputs['_method']);
+        unset($inputs['id'], $inputs['_method']);
 
         // Update log entries
         $categories = \App\Category::where('source_class', 'Manager')->get();
         foreach ($categories as $category) {
             foreach($category->fields as $field) {
-                if (in_array($field->type, array('log','notes'))) {
+                if (in_array($field->type, array('log','notes')) && array_key_exists($field->column_name, $inputs)) {
                     foreach ($inputs[$field->column_name] as $log_entry) {
                         if ($log_entry['id'] === 0) {
                             $this->storeLogEntry($log_entry);
@@ -212,10 +212,10 @@ class ManagerController extends Controller
         }
 
         // Update manager inputs
-        \App\Manager::where('id', $id)
+        Manager::where('id', $id)
             ->update($inputs);
 
-        $manager = \App\Manager::find($id);
+        $manager = Manager::find($id);
 
         // Group log entries by field id.
         $log_entries = $manager->log_entries->sortByDesc('id')->mapToGroups(function($log_entry) {
@@ -246,10 +246,10 @@ class ManagerController extends Controller
 
         $response = [
             'message' => "{$manager->name} has been updated.",
-            'data'    => $manager
+            'manager'    => $manager
         ];
 
-        return response()->json($response, 201);
+        return response()->json($response, 200);
     }
 
     /**
