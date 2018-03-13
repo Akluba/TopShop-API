@@ -23,55 +23,66 @@ class SearchController extends Controller
 
     	$fields = Field::where('source_class', $source_class)
     		->whereIn('type', ['log', 'notes'])
-    		->get();
-
-        $grouped = $fields->mapToGroups(function ($field, $key) use ($source_class) {
-            $field_columns = $field->columns()->get();
-
-            if ($field->type === 'log') {
-                foreach ($field_columns as $column) {
-                    if (in_array($column->type, ['select','select_multiple']))
-                        $column->options;
-                }
-            } elseif ($field->type === 'notes') {
-                $field_columns = $field_columns->where('system', null);
-
-                foreach ($field_columns as $key => $column) {
-                    if (in_array($column->type, ['manager_link','shop_link'])) {
-                        $link_source_class = str_replace('_link', '', $column->type);
-                        $field_columns[$key]['options'] = $this->getSourceRecords($link_source_class);
-                    }
-                }
-
-                $created_for = (object) [
-                    'title' => 'Created For',
-                    'column_name' => 'source_id',
-                    'type' => $this->noteType($source_class),
-                    'options' => $this->getSourceRecords($source_class)
-                ];
-
-                if ($created_for->type === 'select') {
-                    $created_for->options->map(function ($option) {
-                        return $option->title = $option->name;
-                    });
-                }
-
-                $field_columns[] = $created_for;
-                $field_columns = $field_columns->flatten(1);
-            }
-
-            $field->columns = $field_columns;
-
-            return [$field['type'] => $field];
-        });
-
-        $grouped = $grouped->toArray();
+    		->get()->groupBy('type');
 
     	$response = [
-    		'fields' => $grouped
+    		'fields' => $fields
     	];
 
     	return response()->json($response, 200);
+    }
+
+    /**
+     * [show description]
+     * @param  [type] $field_id [description]
+     * @return [type]           [description]
+     */
+    public function show($field_id)
+    {
+        $field = Field::find($field_id);
+
+        if ($field->type === 'log') {
+            $field->columns->map(function ($column) {
+                // Get select options for necessary columns.
+                if (in_array($column->type, ['select','select_multiple'])) {
+                    $column->options;
+                }
+            });
+        } elseif ($field->type === 'notes') {
+            $columns = $field->columns()->where('system', null)->get()->map(function ($column) {
+                // Populate options with either managers or shops.
+                if (in_array($column->type, ['manager_link','shop_link'])) {
+                    $link_source_class = str_replace('_link', '', $column->type);
+                    $column->options = $this->getSourceRecords($link_source_class);
+                }
+
+                return $column;
+            });
+
+            $created_for = (object) [
+                'title' => 'Created For',
+                'column_name' => 'source_id',
+                'type' => $this->noteType($field->source_class),
+                'options' => $this->getSourceRecords($field->source_class)
+            ];
+
+            if ($created_for->type === 'select') {
+                $created_for->options->map(function ($option) {
+                    return $option->title = $option->name;
+                });
+            }
+
+            $columns = $columns->toArray();
+            array_unshift($columns, $created_for);
+
+            $field->columns = $columns;
+        }
+
+        $response = [
+            'field' => $field
+        ];
+
+        return response()->json($response, 200);
     }
 
     /**
@@ -143,6 +154,8 @@ class SearchController extends Controller
 
     private function getSourceRecords($source_class)
     {
+        $source_class = strtolower($source_class);
+
         switch ($source_class) {
             case 'shop':
                 return \App\Shop::withTrashed()->get();
@@ -164,6 +177,8 @@ class SearchController extends Controller
 
     private function noteType($source_class)
     {
+        $source_class = strtolower($source_class);
+
         if ($source_class === 'shop') {
             return 'shop_link';
         } elseif ($source_class === 'manager') {
