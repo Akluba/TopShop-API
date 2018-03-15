@@ -7,6 +7,8 @@ use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use App\Manager;
 use App\Category;
+use App\Field;
+use App\User;
 use App\LogEntry;
 
 class ManagerController extends Controller
@@ -25,54 +27,44 @@ class ManagerController extends Controller
      */
     public function index()
     {
-        $managers = \App\Manager::all();
+        // Get All Managers.
+        $managers = Manager::all();
 
-        // Get Manager categories / fields / field options / field columns / column options.
-        $categories = \App\Category::where('source_class', 'Manager')
-            ->where('system', null)
-            ->get();
+        // Get Manager fields.
+        $fields = Field::where('source_class', 'Manager')
+                    ->whereNotIn('type', ['notes', 'log'])
+                    ->get()->keyBy('column_name');
 
-        $field_array = array();
-
-        foreach ($categories as $category) {
-            $fields = $category->fields;
-            foreach($fields as $field) {
-                if ($field->type !== 'log') {
-                    $field_array[$field->column_name] = [
-                        'type' => $field->type,
-                        'title' => $field->title
-                    ];
-                    if (in_array($field->type, array('select','select_multiple'))) {
-                        $options = $field->options->keyBy('id');
-                        $field_array[$field->column_name]['options'] = $options;
-                    }
-                }
+        // Get Select Options.
+        $fields->map(function ($field) {
+            if (in_array($field->type, ['select','select_multiple'])) {
+                $options = $field->options()->get()->keyBy('id');
+                $field->options = $options->toArray();
             }
-        }
+        });
 
-        $managers->map(function ($manager) use ($field_array){
-            foreach ($field_array as $custom => $field) {
-                if (!is_null($manager[$custom]) && in_array($field['type'], array('select','select_multiple'))) {
-                    if ($field['type'] === 'select_multiple') {
-                        $option_array = array();
-                        foreach (json_decode($manager[$custom]) as $option) {
-                            $option_array[] = $field['options'][$option]['title'];
-                        }
-                        $manager[$custom] = $option_array;
-                    } else {
+        // Format Managers Values.
+        $managers->map(function ($manager) use ($fields) {
+            foreach ($fields as $custom => $field) {
+                if (!is_null($manager[$custom]) && in_array($field->type, ['select','select_multiple'])) {
+                    if ($field->type === 'select') {
                         $manager[$custom] = $field['options'][$manager[$custom]]['title'];
+                    } else {
+                        $option_string_array = array();
+                        foreach (json_decode($manager[$custom]) as $option) {
+                            $option_string_array[] = $field['options'][$option]['title'];
+                        }
+                        $manager[$custom] = $option_string_array;
                     }
-                } elseif ($field['type'] === 'checkbox') {
+                } elseif ($field->type === 'checkbox') {
                     $manager[$custom] = $manager[$custom] ? 'true' : 'false';
                 }
             }
-
-            return $manager;
         });
 
         $data = [
             'manager_list' => $managers,
-            'fields' => $field_array
+            'fields' => $fields
         ];
 
         $response = [
@@ -92,7 +84,7 @@ class ManagerController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'name'       => 'required'
+            'name' => 'required'
         ]);
 
         $name = $request->input('name');
@@ -117,53 +109,34 @@ class ManagerController extends Controller
      */
     public function show($id)
     {
-        $manager = \App\Manager::find($id);
+        // Get Manager.
+        $manager = Manager::find($id);
 
-        // Group log entries by field id.
-        $log_entries = $manager->log_entries->sortByDesc('id')->mapToGroups(function($log_entry) {
-            return [$log_entry['field_id'] => $log_entry];
+        // Get Manager's Log Entries.
+        $log_entries = $manager->log_entries()->get()
+                            ->sortByDesc('id')
+                            ->groupBy('field_id');
+
+        // Get Manager Categories.
+        $categories = Category::where('source_class', 'Manager')->get();
+
+        // Get Manager Form Elements.
+        $form_elements = $categories->map(function ($category) {
+            return $this->getFormElements($category);
         });
 
-        // Get Manager categories / fields / field options / field columns / column options.
-        $categories = \App\Category::where('source_class', 'Manager')->get();
-
-        foreach ($categories as $category) {
-            $fields = $category->fields;
-            foreach($fields as $field) {
-                if (in_array($field->type, array('select','select_multiple'))) {
-                    $field->options;
-                }
-                elseif (in_array($field->type, array('log','notes'))) {
-                    // Adding log entry array to manager object.
-                    if (!empty($log_entries->get($field->id))) {
-                        $field_log_entries = $log_entries->get($field->id)->all();
-
-                        if ($field->type === 'notes') {
-                            foreach ($field_log_entries as $index => $note) {
-                                $field_log_entries[$index]['log_field1'] = $this->userIdToName($note['log_field1']);
-                            }
-                        }
-
-                        $manager[$field->column_name] = $field_log_entries;
-                    }
-                    foreach($field->columns as $column) {
-                        if (in_array($column->type, array('select','select_multiple'))) {
-                            $column->options;
-                        }
-                        elseif (in_array($column->type, array('manager_link','shop_link'))) {
-                            $links = ($column->type === 'manager_link') ? \App\Manager::all() : \App\Shop::all();
-                            $column['options'] = $links;
-                        }
-                    }
+        // Populate Manager Object with Log Entries.
+        foreach ($form_elements as $category) {
+            foreach ($category->fields->whereIn('type', ['log','notes']) as $field) {
+                if (!empty($log_entries->get($field->id))) {
+                    $manager[$field->column_name] = $this->getFieldLogEntries($field, $log_entries);
                 }
             }
         }
 
-        unset($manager->log_entries);
-
-         $data = [
+        $data = [
             'manager'       => $manager,
-            'form_elements' => $categories
+            'form_elements' => $form_elements
         ];
 
         $response = [
@@ -183,66 +156,44 @@ class ManagerController extends Controller
      */
     public function update(Request $request, $id)
     {
-        // Get the inputs from the request.
-        $inputs = $request->toArray();
-        unset($inputs['id'], $inputs['_method']);
+        // Get updated input data from request.
+        $input = $request->except('id','_method');
 
-        // Update log entries
-        $categories = \App\Category::where('source_class', 'Manager')->get();
+        // Get Manager Categories.
+        $categories = Category::where('source_class', 'Manager')->get();
+
+        // Handle Log Entry Fields.
         foreach ($categories as $category) {
-            foreach($category->fields as $field) {
-                if (in_array($field->type, array('log','notes')) && array_key_exists($field->column_name, $inputs)) {
-                    foreach ($inputs[$field->column_name] as $log_entry) {
-                        if ($log_entry['id'] === 0) {
-                            $this->storeLogEntry($log_entry);
-                        }
-                        elseif ($log_entry['deleted']) {
-                            $this->destroyLogEntry($log_entry['id']);
-                        }
-                        else {
-                            if ($field->type === 'notes') {
-                                $log_entry['log_field1'] = $this->userNameToId($log_entry['log_field1']);
-                            }
-                            $this->updateLogEntry($log_entry);
-                        }
-                    }
-                    $inputs[$field->column_name] = null;
+            foreach ($category->fields->whereIn('type', ['log','notes']) as $field) {
+                if (array_key_exists($field->column_name, $input)) {
+                    // Add / Update / Soft Delete Log Entries.
+                    $this->handleLogEntries($field, $input[$field->column_name]);
+                    // Set input to null.
+                    $input[$field->column_name] = null;
                 }
             }
         }
 
-        // Update manager inputs
+        // Update the Manager Object.
         Manager::where('id', $id)
-            ->update($inputs);
+            ->update($input);
 
+        // Get the updated Manager object.
         $manager = Manager::find($id);
 
-        // Group log entries by field id.
-        $log_entries = $manager->log_entries->sortByDesc('id')->mapToGroups(function($log_entry) {
-            return [$log_entry['field_id'] => $log_entry];
-        });
+        // Get Manager's Log Entries.
+        $log_entries = $manager->log_entries()->get()
+                            ->sortByDesc('id')
+                            ->groupBy('field_id');
 
-        $categories = \App\Category::where('source_class', 'Manager')->get();
+        // Populate Manager Object with Log Entries.
         foreach ($categories as $category) {
-            foreach($category->fields as $field) {
-                if (in_array($field->type, array('log','notes'))) {
-                    // Adding log entry array to manager object.
-                    if (!empty($log_entries->get($field->id))) {
-                        $field_log_entries = $log_entries->get($field->id)->all();
-
-                        if ($field->type === 'notes') {
-                            foreach ($field_log_entries as $index => $note) {
-                                $field_log_entries[$index]['log_field1'] = $this->userIdToName($note['log_field1']);
-                            }
-                        }
-
-                        $manager[$field->column_name] = $field_log_entries;
-                    }
+            foreach ($category->fields->whereIn('type', ['log','notes']) as $field) {
+                if (!empty($log_entries->get($field->id))) {
+                    $manager[$field->column_name] = $this->getFieldLogEntries($field, $log_entries);
                 }
             }
         }
-
-        unset($manager->log_entries);
 
         $response = [
             'message' => "{$manager->name} has been updated.",
@@ -260,7 +211,7 @@ class ManagerController extends Controller
      */
     public function destroy($id)
     {
-        $manager = \App\Manager::find($id);
+        $manager = Manager::find($id);
 
         $manager->delete();
 
@@ -272,36 +223,89 @@ class ManagerController extends Controller
         return response()->json($response, 200);
     }
 
+    private function getFormElements($category)
+    {
+        foreach ($category->fields as $field) {
+            // Get Field Options
+            if (in_array($field->type, ['select','select_multiple'])) {
+                $field->options;
+            }
+
+            // Get Columns and Column Options.
+            if (in_array($field->type, ['log','notes'])) {
+                foreach ($field->columns as $column) {
+                    if (in_array($column->type, ['select','select_multiple'])) {
+                        $column->options;
+                    } elseif (in_array($column->type, ['manager_link','shop_link'])) {
+                        $options = ($column->type === 'manager_link') ? \App\Manager::all(['id','name']) : \App\Shop::all(['id','name']);
+                        $column->options = $options->toArray();
+                    }
+                }
+            }
+        }
+
+        return $category;
+    }
+
+    private function getFieldLogEntries($field, $log_entries)
+    {
+        $field_log_entries = $log_entries->get($field->id);
+
+        if ($field->type === 'notes') {
+            $field_log_entries->map(function ($note) {
+                $note->log_field1 = $this->userIdToName($note->log_field1);
+            });
+        }
+
+        return $field_log_entries->toArray();
+    }
+
+    private function handleLogEntries($field, $field_log_entries)
+    {
+        foreach ($field_log_entries as $log_entry) {
+            if ($log_entry['id'] === 0) {
+                $this->storeLogEntry($log_entry);
+            }
+            elseif ($log_entry['deleted']) {
+                $this->destroyLogEntry($log_entry['id']);
+            }
+            else {
+                if ($field->type === 'notes') {
+                    $log_entry->log_field1 = $this->userNameToId($log_entry['log_field1']);
+                }
+                $this->updateLogEntry($log_entry);
+            }
+        }
+    }
+
     private function userIdToName($id)
     {
         $users = $this->users->keyBy('id');
-
         return $users[$id]->name;
     }
 
     private function userNameToId($name)
     {
         $users = $this->users->keyBy('name');
-
         return $users[$name]->id;
     }
 
     private function storeLogEntry($log_entry)
     {
         unset($log_entry['id'], $log_entry['deleted']);
-        \App\LogEntry::create($log_entry);
+        LogEntry::create($log_entry);
     }
 
     private function updateLogEntry($log_entry)
     {
         unset($log_entry['deleted']);
-        \App\LogEntry::where('id', $log_entry['id'])
+        LogEntry::where('id', $log_entry['id'])
             ->update($log_entry);
     }
 
-    private function destroyLogEntry($id) {
-        $log_entry = \App\LogEntry::find($id);
+    private function destroyLogEntry($id)
+    {
+        $log_entry = LogEntry::find($id);
         $log_entry->delete();
     }
-
 }
