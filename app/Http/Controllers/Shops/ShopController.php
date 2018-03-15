@@ -271,7 +271,7 @@ class ShopController extends Controller
             }
             else {
                 if ($field->type === 'notes') {
-                    $log_entry->log_field1 = $this->userNameToId($log_entry['log_field1']);
+                    $log_entry['log_field1'] = $this->userNameToId($log_entry['log_field1']);
                 }
                 $this->updateLogEntry($log_entry);
             }
