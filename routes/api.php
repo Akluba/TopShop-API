@@ -29,6 +29,7 @@ Route::middleware(['auth:api'])->group(function() {
 	Route::resource('users', 'Auth\UserController', ['only' => ['index','store','update','destroy']]);
 
 	Route::get('/dash/notes', 'Shared\DashController@index');
+	Route::get('/dash/notes/{source_class}/{field_id?}', 'Shared\DashController@filterNotes');
 
 	Route::get('/search', 'Shared\SearchController@index');
 	Route::get('/search/{field_id}', 'Shared\SearchController@show');

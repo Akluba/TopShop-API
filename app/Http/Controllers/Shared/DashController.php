@@ -4,6 +4,21 @@ namespace App\Http\Controllers\Shared;
 
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Shared\NoteCollection;
+
+use App\Field;
+use App\Column;
+use App\LogEntry;
+
+class Filter {
+    public $field_id;
+    public $title;
+
+    function __construct($field_id, $title) {
+        $this->field_id = $field_id;
+        $this->title = $title;
+    }
+}
 
 class Note {
     public $created_by;
@@ -42,86 +57,108 @@ class DashController extends Controller
 
     public function index(Request $request)
     {
-        // Get all note fields.
-        $note_fields = \App\Field::where('type', 'notes')
-            ->get();
+        // Get all note Fields.
+        $note_fields = Field::where('type', 'notes')
+                            ->get();
 
         // Quick hack to limit CPR users to only see CPR Notes.
         if ($request->user()->profile === 'cpr') {
             $note_fields = $note_fields->where('source_class', 'Cpr');
         }
 
-        // Collection to add formatted notes to.
-        $notes = collect();
+        // Get notes.
+        $notes = $note_fields->map(function ($field) {
+            return $this->getFieldNotes($field);
+        })->flatten(1)->sortByDesc('created_date')->values()->all();
 
-        foreach ($note_fields as $field) {
+        // Paginate Notes.
+        $paginated_notes = ( new NoteCollection($notes) )->paginate(5);
 
-            // Get non system columns.
-            $tag_columns = \App\Column::where('field_id', $field->id)
-                ->whereNull('system')
-                ->get(['column_name','type']);
-
-            // Get note entries, exclude entries with deleted source_id records.
-            $name_array = $this->sources[$field->source_class]
-                ->pluck('id')
-                ->toArray();
-
-            $field_notes = \App\LogEntry::where('field_id', $field->id)
-                ->whereIn('source_id', $name_array)
-                ->get();
-
-            // Insert formatted notes into notes collection.
-            $notes[] = $field_notes->map(function ($note) use ($tag_columns) {
-                $note_tags = null;
-                // When tag columns exist, format them.
-                if ($tag_columns) {
-                    $note_tags = $tag_columns->map(function ($column) use ($note) {
-                        if (!is_null($note[$column['column_name']])) {
-                            return $this->extractTagData($note, $column);
-                        }
-                    })->toArray();
-                }
-
-                // Filter out Null values.
-                $note_tags = array_filter($note_tags);
-
-                // When note tags are empty, set to null
-                $note_tags = !empty($note_tags) ? array_values($note_tags) : null;
-
-                return new Note(
-                    $this->convertIdToText($note['log_field1']),
-                    $note['log_field2'],
-                    array(
-                        'id' => $note['source_id'],
-                        'class' => $note['source_class'],
-                        'text' => $this->convertIdToText($note['source_id'], $note['source_class'])
-                    ),
-                    $note['log_field3'],
-                    array(
-                        'class' => $note['source_class'],
-                        'field' => $note['field_id']
-                    ),
-                    $note_tags
-                );
-            });
-        }
-
+        // Format available source class filter and field sub filters.
         $filters = $note_fields->mapToGroups(function ($field, $key) {
-            return [$field['source_class'] => [
-                'field_id' => $field->id,
-                'title' => $field->title
-            ]];
+            return [$field->source_class => new Filter($field->id, $field->title)];
         })->toArray();
-
-        $notes = $notes->flatten(1)
-            ->values()->all();
 
         $response = [
             'filters' => $filters,
-            'notes' => $notes
+            'notes'   => $paginated_notes
         ];
 
         return response()->json($response, 200);
+    }
+
+    public function filterNotes($source_class, $field_id = null)
+    {
+        if (isset($field_id)) {
+            // Get notes for specified Field.
+        } else {
+            // Get notes for source_class fields.
+        }
+    }
+
+    private function getFieldNotes($field)
+    {
+        // First create an array of active source_ids for the given source_class.
+        $active = $this->sources[$field->source_class]
+                        ->pluck('id')
+                        ->toArray();
+
+        // Get Notes for field.
+        $field_notes = LogEntry::where('field_id', $field->id)
+                            ->whereIn('source_id', $active)
+                            ->get();
+
+        // Format Notes.
+        return $this->formatNotes($field->id, $field_notes);
+    }
+
+    private function formatNotes($field_id, $field_notes)
+    {
+        // Get Columns for Field.
+        $tag_columns = Column::where('field_id', $field_id)
+                            ->whereNull('system')
+                            ->get(['column_name','type']);
+
+        // Format Notes.
+        $formatted_notes = $field_notes->map(function ($note) use ($tag_columns) {
+            return new Note(
+                $this->convertIdToText($note['log_field1']),
+                $note['log_field2'],
+                array(
+                    'id' => $note['source_id'],
+                    'class' => $note['source_class'],
+                    'text' => $this->convertIdToText($note['source_id'], $note['source_class'])
+                ),
+                $note['log_field3'],
+                array(
+                    'class' => $note['source_class'],
+                    'field' => $note['field_id']
+                ),
+                $this->formatTagColumns($tag_columns, $note)
+            );
+        });
+
+        return $formatted_notes;
+    }
+
+    private function formatTagColumns($tag_columns, $note)
+    {
+        $note_tags = null;
+
+        // When tag columns exist, format them.
+        if ($tag_columns) {
+            $note_tags = $tag_columns->map(function ($column) use ($note) {
+                if (!is_null($note[$column['column_name']])) {
+                    return $this->extractTagData($note, $column);
+                }
+            })->toArray();
+        }
+
+        // Filter out Null values.
+        $note_tags = array_filter($note_tags);
+
+        // When note tags are empty, set to null
+        return !empty($note_tags) ? array_values($note_tags) : null;
     }
 
     private function extractTagData($note, $column)
