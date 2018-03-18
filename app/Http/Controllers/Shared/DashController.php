@@ -107,10 +107,15 @@ class DashController extends Controller
         // Get notes.
         $notes = $note_fields->map(function ($field) {
             return $this->getFieldNotes($field);
-        })->flatten(1)->sortByDesc('created_date')->values()->all();
+        })->flatten(1);
+
+        // Sorting Notes by date created.
+        $sorted_notes = $notes->sortByDesc(function ($note) {
+            return strtotime($note->created_date);
+        })->values()->all();
 
         // Paginate Notes.
-        $paginated_notes = ( new NoteCollection($notes) )->paginate(15);
+        $paginated_notes = ( new NoteCollection($sorted_notes) )->paginate(15);
 
         return response()->json($paginated_notes, 200);
     }
