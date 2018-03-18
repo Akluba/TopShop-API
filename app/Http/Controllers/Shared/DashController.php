@@ -25,16 +25,14 @@ class Note {
     public $created_date;
     public $created_for;
     public $note_text;
-    public $filters;
     public $tags;
 
-    function __construct($created_by, $created_date, $created_for, $note_text, $filters, $tags = null)
+    function __construct($created_by, $created_date, $created_for, $note_text, $tags = null)
     {
         $this->created_by = $created_by;
         $this->created_date = $created_date;
         $this->created_for = $created_for;
         $this->note_text = $note_text;
-        $this->filters = $filters;
         $this->tags = $tags;
     }
 }
@@ -55,6 +53,11 @@ class DashController extends Controller
         ];
     }
 
+    /**
+     * [index description]
+     * @param  Request $request [description]
+     * @return [type]           [description]
+     */
     public function index(Request $request)
     {
         // Get all note Fields.
@@ -66,36 +69,57 @@ class DashController extends Controller
             $note_fields = $note_fields->where('source_class', 'Cpr');
         }
 
-        // Get notes.
-        $notes = $note_fields->map(function ($field) {
-            return $this->getFieldNotes($field);
-        })->flatten(1)->sortByDesc('created_date')->values()->all();
-
-        // Paginate Notes.
-        $paginated_notes = ( new NoteCollection($notes) )->paginate(5);
-
         // Format available source class filter and field sub filters.
         $filters = $note_fields->mapToGroups(function ($field, $key) {
             return [$field->source_class => new Filter($field->id, $field->title)];
         })->toArray();
 
         $response = [
-            'filters' => $filters,
-            'notes'   => $paginated_notes
+            'filters' => $filters
         ];
 
         return response()->json($response, 200);
     }
 
-    public function filterNotes($source_class, $field_id = null)
+    /**
+     * [notes description]
+     * @param  [type]  $source_class [description]
+     * @param  [type]  $field_id     [description]
+     * @param  Request $request      [description]
+     * @return [type]                [description]
+     */
+    public function notes($source_class = null, $field_id = null, Request $request)
     {
-        if (isset($field_id)) {
-            // Get notes for specified Field.
-        } else {
-            // Get notes for source_class fields.
+        // Get all note Fields.
+        $note_fields = Field::where('type', 'notes')
+                            ->get();
+
+        // Quick hack to limit CPR users to only see CPR Notes.
+        if ($request->user()->profile === 'cpr') {
+            $note_fields = $note_fields->where('source_class', 'Cpr');
         }
+
+        // Filter on either Source Class or Field ID.
+        if (isset($source_class) || isset($field_id)) {
+            $note_fields = (isset($field_id)) ? $note_fields->where('id', $field_id) : $note_fields->where('source_class', ucfirst($source_class));
+        }
+
+        // Get notes.
+        $notes = $note_fields->map(function ($field) {
+            return $this->getFieldNotes($field);
+        })->flatten(1)->sortByDesc('created_date')->values()->all();
+
+        // Paginate Notes.
+        $paginated_notes = ( new NoteCollection($notes) )->paginate(15);
+
+        return response()->json($paginated_notes, 200);
     }
 
+    /**
+     * [getFieldNotes description]
+     * @param  [type] $field [description]
+     * @return [type]        [description]
+     */
     private function getFieldNotes($field)
     {
         // First create an array of active source_ids for the given source_class.
@@ -112,6 +136,12 @@ class DashController extends Controller
         return $this->formatNotes($field->id, $field_notes);
     }
 
+    /**
+     * [formatNotes description]
+     * @param  [type] $field_id    [description]
+     * @param  [type] $field_notes [description]
+     * @return [type]              [description]
+     */
     private function formatNotes($field_id, $field_notes)
     {
         // Get Columns for Field.
@@ -130,10 +160,6 @@ class DashController extends Controller
                     'text' => $this->convertIdToText($note['source_id'], $note['source_class'])
                 ),
                 $note['log_field3'],
-                array(
-                    'class' => $note['source_class'],
-                    'field' => $note['field_id']
-                ),
                 $this->formatTagColumns($tag_columns, $note)
             );
         });
@@ -141,6 +167,12 @@ class DashController extends Controller
         return $formatted_notes;
     }
 
+    /**
+     * [formatTagColumns description]
+     * @param  [type] $tag_columns [description]
+     * @param  [type] $note        [description]
+     * @return [type]              [description]
+     */
     private function formatTagColumns($tag_columns, $note)
     {
         $note_tags = null;
@@ -161,6 +193,12 @@ class DashController extends Controller
         return !empty($note_tags) ? array_values($note_tags) : null;
     }
 
+    /**
+     * [extractTagData description]
+     * @param  [type] $note   [description]
+     * @param  [type] $column [description]
+     * @return [type]         [description]
+     */
     private function extractTagData($note, $column)
     {
         if (!in_array($column['type'], array('manager_link','shop_link'))) {
@@ -179,6 +217,12 @@ class DashController extends Controller
         ];
     }
 
+    /**
+     * [convertIdToText description]
+     * @param  [type] $id           [description]
+     * @param  [type] $source_class [description]
+     * @return [type]               [description]
+     */
     private function convertIdToText($id, $source_class = null)
     {
         if (is_null($source_class)) {
