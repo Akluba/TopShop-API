@@ -163,6 +163,9 @@ class SearchController extends Controller
             case 'manager':
                 return \App\Manager::withTrashed()->get();
                 break;
+            case 'company':
+                return \App\Company::withTrashed()->get();
+                break;
             case 'vendor':
                 return \App\Vendor::withTrashed()->get();
                 break;

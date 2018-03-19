@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Setup;
 
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use App\Helpers\SourceClassTable;
 use App\Field;
 
 class FieldController extends Controller
@@ -40,7 +41,7 @@ class FieldController extends Controller
         $field->sort_order   = $sort_order;
         $field->save();
 
-        $table = ($source_class == 'Cpr') ? strtolower($source_class) : strtolower($source_class) .'s';
+        $table = (new SourceClassTable($source_class))->tableName();
         \App\Field::addColumnToTable($table, $field->column_name);
 
         // Add default columns for notes field.

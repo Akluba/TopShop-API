@@ -48,6 +48,7 @@ class DashController extends Controller
         $this->sources = [
             'Shop' => \App\Shop::all()->keyBy('id'),
             'Manager' => \App\Manager::all()->keyBy('id'),
+            'Company' => \App\Company::all()->keyBy('id'),
             'Vendor' => \App\Vendor::all()->keyBy('id'),
             'Cpr' => \App\CPR::all()->keyBy('id')
         ];
