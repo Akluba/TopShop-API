@@ -48,4 +48,6 @@ Route::middleware(['auth:api'])->group(function() {
 	Route::resource('companies', 'Companies\CompanyDetailController', ['only' => ['index','store','show','update','destroy']]);
 	Route::resource('vendors', 'Vendors\VendorController', ['only' => ['index','store','show','update','destroy']]);
 	Route::resource('cpr', 'CPR\CPRController', ['only' => ['index','store','show','update','destroy']]);
+
+	Route::resource('company/requirements', 'Companies\CompanyRequirementsController', ['only' => ['index','store','show','update','destroy']]);
 });
